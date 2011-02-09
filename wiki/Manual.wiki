@@ -138,6 +138,10 @@ This add on is freeware and was created by Michael "Clyde Radcliffe" Jurisch wit
 
 Greetings go to the folks at http://www.amiga-resistance.info
 
+A very special and huge *"Thank you"* go to the following contributors who donated to the project:
+ * Pål Nygård
+ * Ugalabugala Inc.
+
 The separate tool HWCC was programmed in Hollywood (of course :-)) and with the help of Fabio Falcuccis ScuiLib. It was compiled natively for AOS3, AOS4 and MorphOS and the correct version will be installed depending on your platform.
 
 copyright 2008 - 2011 by Michael Jurisch and for plug-in and icons by Dietmar Eilert
