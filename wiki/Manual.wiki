@@ -29,13 +29,13 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 
 
 1.6: automatic indention for the following control structures and blocks:
-* If-Else-ElseIf-EndIf
-* While-Wend
-* For-Next
-* Repeat-Until
-* Switch-Case-EndSwitch
-* Function-EndFunction
-* Block-EndBlock
+ * If-Else-ElseIf-EndIf
+ * While-Wend
+ * For-Next
+ * Repeat-Until
+ * Switch-Case-EndSwitch
+ * Function-EndFunction
+ * Block-EndBlock
 
 1.7: corressponding bracket (), [], {} is marked when cursor is over the other bracket
 
@@ -91,21 +91,21 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 3.10: several patterns can be typed it to insert complete text templates at cursor position for control structures and blocks
 ==>
 The following patterns are supported:
-* If. ==> If-EndIf
-* Ifel. ==> If-Else-EndIf
-* Ifelif. ==> If-ElseIf-Else-EndIf
-* Whi. ==> While-Wend
-* For. ==> For-To-Next
-* Forst. ==> For-To-Step-Next
-* Rep. ==> Repeat-Until
-* Swi. ==> Switch-Case-Default-EndSwitch
-* Func. ==> Function-EndFunction
-* Blo. ==> Block-EndBlock
+ * If. ==> If-EndIf
+ * Ifel. ==> If-Else-EndIf
+ * Ifelif. ==> If-ElseIf-Else-EndIf
+ * Whi. ==> While-Wend
+ * For. ==> For-To-Next
+ * Forst. ==> For-To-Step-Next
+ * Rep. ==> Repeat-Until
+ * Swi. ==> Switch-Case-Default-EndSwitch
+ * Func. ==> Function-EndFunction
+ * Blo. ==> Block-EndBlock
 
 3.11: pressing Amiga+/ shows a list of all of your defined functions in your source code; clicking at a function will jump to its definition
 
 
-3.12: pressing Ctrl+f when the cursor is over the call of a user defined function will jump to its definition
+3.12: pressing Ctrl+f while the cursor is over the call of a user defined function will jump to its definition
 
 =4 Troubleshooting/FAQ=
 Q: I use AmiKit and Hollywood 4. Nearly everytime I compile my source code AmiKit freezes and I have to reboot. What's the problem?
@@ -117,29 +117,30 @@ A: Just download the latest archive, unpack it and run the install script (choos
 
 =Version History=
 1.1 (25.04.2009):
-- all Hollywood output is send to new GoldEd container (just for Hollywood 4)
-- opening the media file from mouse context menu (suggested by Andreas Falkenhahn)
-- Shift+F4 runs the application in fullscreen mode (suggested by Andreas Falkenhahn)
-- added support for MacOS Intel compiling
-- changed folding code from ;/// to ;;;
-- the pattern "Func." now also includes the new folding code - altered HWCC (thanks to Martin "McFly" Cornelius and Dominic "Tipsi" Lauternegger for hints and bug finding)
-- several bugfixes and changes due to differences between Hollywood 3 and 4 (syntax highlightning and quick help for new functions, ...) (thanks to Dominic "Tipsi" Lauternegger and Andreas Falkenhahn for beta testing)
+ * all Hollywood output is send to new GoldEd container (just for Hollywood 4)
+ * opening the media file from mouse context menu (suggested by Andreas Falkenhahn)
+ * Shift+F4 runs the application in fullscreen mode (suggested by Andreas Falkenhahn)
+ * added support for MacOS Intel compiling
+ * changed folding code from ;/// to ;;;
+ * the pattern "Func." now also includes the new folding code
+ * HWCC updated (thanks to Martin "McFly" Cornelius and Dominic "Tipsi" Lauternegger for hints and bug finding)
+ * several bugfixes and changes due to differences between Hollywood 3 and 4 (syntax highlightning and quick help for new functions, ...) (thanks to Dominic "Tipsi" Lauternegger and Andreas Falkenhahn for beta testing)
 
 1.0 (23.11.2008):
-- Initial release
+ * Initial release
 
 =Legal Notice=
 This add on is freeware and was created by Michael "Clyde Radcliffe" Jurisch with the help of the following people:
-Dietmar Eilert
-Andreas Falkenhahn
-Fabio Falcucci
-and the Hollywood mailinglist ...
+ * Dietmar Eilert
+ * Andreas Falkenhahn
+ * Fabio Falcucci
+ * and the Hollywood mailinglist ...
 
 Greetings go to the folks at http://www.amiga-resistance.info
 
-The separate tool HWCC was programmed in Hollywood (of course :-)) and with Fabio Falcuccis ScuiLib. It was compiled natively for AOS3, AOS4 and MorphOS and the correct version will be installed depending on your platform.
+The separate tool HWCC was programmed in Hollywood (of course :-)) and with the help of Fabio Falcuccis ScuiLib. It was compiled natively for AOS3, AOS4 and MorphOS and the correct version will be installed depending on your platform.
 
-copyright 2008/2009 by Michael Jurisch and for plug-in and icons by Dietmar Eilert
+copyright 2008 - 2011 by Michael Jurisch and for plug-in and icons by Dietmar Eilert
 
 Please send bug reports, comments, suggestions, and Pay Pal donations to radcliffe@gmx.de
 
