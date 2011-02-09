@@ -123,7 +123,7 @@ A: Just download the latest archive, unpack it and run the install script (choos
  * added support for MacOS Intel compiling
  * changed folding code from ;/// to ;;;
  * the pattern "Func." now also includes the new folding code
- * HWCC updated (thanks to Martin "McFly" Cornelius and Dominic "Tipsi" Lauternegger for hints and bug finding)
+ * [HWCC] updated (thanks to Martin "McFly" Cornelius and Dominic "Tipsi" Lauternegger for hints and bug finding)
  * several bugfixes and changes due to differences between Hollywood 3 and 4 (syntax highlightning and quick help for new functions, ...) (thanks to Dominic "Tipsi" Lauternegger and Andreas Falkenhahn for beta testing)
 
 1.0 (23.11.2008):
