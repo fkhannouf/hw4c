@@ -1,14 +1,16 @@
 #summary Features/Manual of Hollywood add on for Cubic IDE
 #labels Featured
 
-= 0 Requirements =
+<wiki:toc max_depth="1" />
+
+=0 Requirements=
 
 You need to have an installed Cubic IDE and at least Hollywood 3.0 to use this add on. With version 1.1 hw4cubic automatically distinguishes between Hollywood 3 and Hollywood 4, as with Hollywood 4 you have additonal features!
 It was created with AmiKit and OS 3.9, but should work on all platforms that can run Cubic IDE. But if you encounter problems on your platform write a mail to the address provided in the Legal Notice section or post a report in the hw4cubic-Thread at Amiga-Resistance.info: http://www.amig-resistance.info/phpbb33/viewtopic.php?f=38&t=1919
 
 You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloads.php?view=detail&df_id=391
 
-1 General
+=1 General=
 1.1: syntax highlightning for all Hollywood keywords and functions (depending on you Hollywood version); special labeling for obsolete Hollywood commands, so updating the source code to recommend Hollywood version should be much easier now
 
 
@@ -46,7 +48,7 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 
 1.11: if you right click a file name like --@BRUSH 1, "test.iff"-- you can choose to open the media file (with multiview) (V 1.1)
 
-2 Functions via toolbar
+=2 Functions via toolbar=
 2.1: insert template text of a minimalistic Hollywood programm for quick coding start
 
 
@@ -65,7 +67,7 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 2.7: Button for quick insert of (hard to remember) constants for objects, attributes, coordinates, colors, transitions, fonts and fill styles
 
 
-3 Functions via keyboard
+=3 Functions via keyboard=
 3.1: pressing F1 while the cursor is over a Hollywood function or keyword displays the corresponding section in the Hollywood documentation guide (context sensitive help); if cursor is not over a word, the main topic of the help guide is displayed
 
 
@@ -105,14 +107,16 @@ The following patterns are supported:
 
 3.12: pressing Ctrl+f when the cursor is over the call of a user defined function will jump to its definition
 
-4 Troubleshooting/FAQ
+=4 Troubleshooting/FAQ=
 Q: I use AmiKit and Hollywood 4. Nearly everytime I compile my source code AmiKit freezes and I have to reboot. What's the problem?
 A: It isn't completely clear yet what causes the problem, but a workaround is to disable the tooltype "TOOLPRI" of the application "LimpidClock" (right click on "Limpid Clock" icon, choose "Information", scroll down and double click the entry "TOOLPRI", and save the settings)
 
 Q: I already have an older version of hw4cubic installed. How can I update?
 A: Just download the latest archive, unpack it and run the install script (choose "Install ...").
-Version History
-1.0 (??.04.2009):
+
+
+=Version History=
+1.1 (25.04.2009):
 - all Hollywood output is send to new GoldEd container (just for Hollywood 4)
 - opening the media file from mouse context menu (suggested by Andreas Falkenhahn)
 - Shift+F4 runs the application in fullscreen mode (suggested by Andreas Falkenhahn)
@@ -123,7 +127,8 @@ Version History
 
 1.0 (23.11.2008):
 - Initial release
-Legal Notice
+
+=Legal Notice=
 This add on is freeware and was created by Michael "Clyde Radcliffe" Jurisch with the help of the following people:
 Dietmar Eilert
 Andreas Falkenhahn
