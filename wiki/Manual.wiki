@@ -29,13 +29,13 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 
 
 1.6: automatic indention for the following control structures and blocks:
-- If-Else-ElseIf-EndIf
-- While-Wend
-- For-Next
-- Repeat-Until
-- Switch-Case-EndSwitch
-- Function-EndFunction
-- Block-EndBlock
+* If-Else-ElseIf-EndIf
+* While-Wend
+* For-Next
+* Repeat-Until
+* Switch-Case-EndSwitch
+* Function-EndFunction
+* Block-EndBlock
 
 1.7: corressponding bracket (), [], {} is marked when cursor is over the other bracket
 
@@ -91,16 +91,16 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 3.10: several patterns can be typed it to insert complete text templates at cursor position for control structures and blocks
 ==>
 The following patterns are supported:
-- If. ==> If-EndIf
-- Ifel. ==> If-Else-EndIf
-- Ifelif. ==> If-ElseIf-Else-EndIf
-- Whi. ==> While-Wend
-- For. ==> For-To-Next
-- Forst. ==> For-To-Step-Next
-- Rep. ==> Repeat-Until
-- Swi. ==> Switch-Case-Default-EndSwitch
-- Func. ==> Function-EndFunction
-- Blo. ==> Block-EndBlock
+* If. ==> If-EndIf
+* Ifel. ==> If-Else-EndIf
+* Ifelif. ==> If-ElseIf-Else-EndIf
+* Whi. ==> While-Wend
+* For. ==> For-To-Next
+* Forst. ==> For-To-Step-Next
+* Rep. ==> Repeat-Until
+* Swi. ==> Switch-Case-Default-EndSwitch
+* Func. ==> Function-EndFunction
+* Blo. ==> Block-EndBlock
 
 3.11: pressing Amiga+/ shows a list of all of your defined functions in your source code; clicking at a function will jump to its definition
 
