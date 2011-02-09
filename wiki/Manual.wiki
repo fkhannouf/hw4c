@@ -46,7 +46,7 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 1.10: compile, debug and error output: Hollywood 4 users will now recognize a new container called "Output". This container show all compile, debug and error output instead of opening a new shell window. Additionally, if you click on a message line that shows an error you will be directed to the corresponding line in the source code. (V 1.1) Attention: AmiKit users should read the FAQ!
 
 
-1.11: if you right click a file name like --@BRUSH 1, "test.iff"-- you can choose to open the media file (with multiview) (V 1.1)
+1.11: if you right click a file name like `@BRUSH 1, "test.iff"` you can choose to open the media file (with multiview) (V 1.1)
 
 =2 Functions via toolbar=
 2.1: insert template text of a minimalistic Hollywood programm for quick coding start
@@ -144,8 +144,9 @@ A very special and huge *"Thank you"* go to the following contributors who donat
 
 The separate tool HWCC was programmed in Hollywood (of course :-)) and with the help of Fabio Falcuccis ScuiLib. It was compiled natively for AOS3, AOS4 and MorphOS and the correct version will be installed depending on your platform.
 
-copyright 2008 - 2011 by Michael Jurisch and for plug-in and icons by Dietmar Eilert
-
 Please send bug reports, comments, suggestions, and Pay Pal donations to radcliffe@gmx.de
 
 YOU USE THIS SOFTWARE AT YOUR OWN RISK
+
+
+_copyright 2008 - 2011 by Michael Jurisch and for plug-in and icons by Dietmar Eilert_
