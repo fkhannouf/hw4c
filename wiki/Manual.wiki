@@ -13,7 +13,7 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 =1 General=
 1.1: *syntax highlighting* for all Hollywood keywords and functions (depending on you Hollywood version); special labelling for obsolete Hollywood commands, so updating the source code to recommend Hollywood version should be much easier now
 
-http://img248.imageshack.us/img248/2332/synhigh.jpg
+<img src="http://img248.imageshack.us/img248/2332/synhigh.jpg" border="1" />
 
 
 1.2: *help information* after entering a Hollywood function at bottom of Cubic IDE (context sensitive)
@@ -128,10 +128,12 @@ The following patterns are supported:
  * Func. ==> Function-EndFunction
  * Blo. ==> Block-EndBlock
 
-3.11: pressing Amiga+/ shows a list of all of your defined functions in your source code; clicking at a function will jump to its definition
+3.11: pressing *Amiga+/* shows a list of all of *your defined functions* in your source code; clicking at a function will jump to its definition
+
+<img src="http://img268.imageshack.us/img268/9959/ownfunctions.jpg" border="1" />
 
 
-3.12: pressing Ctrl+f while the cursor is over the call of a user defined function will jump to its definition
+3.12: pressing *Ctrl+f* while the cursor is over the call of a user defined function will *jump to its definition*
 
 =4 Troubleshooting/FAQ=
 Q: I use AmiKit and Hollywood 4. Nearly everytime I compile my source code AmiKit freezes and I have to reboot. What's the problem?
