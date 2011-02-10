@@ -13,15 +13,22 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 =1 General=
 1.1: *syntax highlighting* for all Hollywood keywords and functions (depending on you Hollywood version); special labelling for obsolete Hollywood commands, so updating the source code to recommend Hollywood version should be much easier now
 
-http://img248.imageshack.us/i/synhigh.jpg/
-
-1.2: help information after entering a Hollywood function at bottom of Cubic (context sensitive)
+http://img248.imageshack.us/img248/2332/synhigh.jpg
 
 
-1.3: quick access to all chapters form the Hollywood documentation at bottom of Cubic
+1.2: *help information* after entering a Hollywood function at bottom of Cubic (context sensitive)
+
+http://img547.imageshack.us/img547/2156/helpinfo.jpg
+
+
+1.3: *quick access* to all chapters form the Hollywood documentation at bottom of Cubic
+
+http://img832.imageshack.us/img832/3345/helpchapters.jpg
 
 
 1.4.1: all hws and hwd files that are located in the same (project) directory are listed on left side of Cubic for quicker access.
+
+http://img696.imageshack.us/img696/286/projfiles.jpg
 
 
 1.4.2: Now also image files of the types iff, jpg, png, gif, bmp are listed in a third section. If you simple click the filename of an image it will be opened. If you hold the Shift key while clicking it the filename will be insert into you sourcecode. (V 1.1)
