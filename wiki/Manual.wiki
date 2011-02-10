@@ -16,12 +16,12 @@ You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloa
 http://img248.imageshack.us/img248/2332/synhigh.jpg
 
 
-1.2: *help information* after entering a Hollywood function at bottom of Cubic (context sensitive)
+1.2: *help information* after entering a Hollywood function at bottom of Cubic IDE (context sensitive)
 
 http://img547.imageshack.us/img547/2156/helpinfo.jpg
 
 
-1.3: *quick access* to all chapters form the Hollywood documentation at bottom of Cubic
+1.3: *quick access* to all chapters form the Hollywood documentation at bottom of Cubic IDE
 
 http://img832.imageshack.us/img832/3345/helpchapters.jpg
 
@@ -61,12 +61,12 @@ http://img547.imageshack.us/img547/5786/outpute.jpg
 1.11: if you right click a file name like `@BRUSH 1, "test.iff"` you can choose to open the media file (with multiview) (V 1.1)
 
 =2 Functions via toolbar=
-2.1: insert template text of a minimalistic Hollywood programm for a quick start of coding
+2.1: insert template text of a minimalistic Hollywood programme for a quick start of coding
 
 http://img710.imageshack.us/img710/5034/quickstartf.jpg
 
 
-2.2: compile source code with separate tool *[HWCC]* (Hollywood-Cubic-Compiler), which is a GUI for compiling for different plattforms at once
+2.2: compile source code with separate tool *[HWCC]* (Hollywood-Cubic-Compiler), which is a GUI for compiling for different platforms at once
 
 http://img204.imageshack.us/img204/3875/hwcc.jpg
 
@@ -82,34 +82,40 @@ http://img171.imageshack.us/img171/5343/buttonsi.jpg
 
 2.6: Button to view the Hollywood tutorial code (right button on screenshot 2.4)
 
-2.7: Button for *quick insert* of (hard to remember) constants for objects, attributes, coordinates, colors, transitions, fonts and fill styles
+2.7: Button for *quick insert* of (hard to remember) constants for objects, attributes, coordinates, colours, transitions, fonts and fill styles
 
 http://img37.imageshack.us/img37/5899/quickinsert.jpg
 
 
 =3 Functions via keyboard=
-3.1: pressing F1 while the cursor is over a Hollywood function or keyword displays the corresponding section in the Hollywood documentation guide (context sensitive help); if cursor is not over a word, the main topic of the help guide is displayed
+3.1: pressing *F1* while the cursor is over a Hollywood function or keyword displays the corresponding section in the Hollywood documentation guide (*context sensitive help*); if cursor is not over a word, the main topic of the help guide is displayed
+
+http://img808.imageshack.us/img808/3084/contexthelp.jpg
 
 
-3.2: pressing Shift+F1 while cursor is over a Hollywood function opens the corresponding section of the hollywood.guide in write protect mode within GoldED in a new document, so you can now easily copy examples etc. and paste it into your source code
+3.2: pressing *Shift+F1* while cursor is over a Hollywood function opens the corresponding section of the hollywood.guide in write protect mode *within GoldED* in a new document, so you can now easily copy examples etc. and paste it into your source code
 
-3.3: pressing F2 compiles the source code to a choosen path and file as a programm for the platform you are working on
+3.3: pressing *F2 compiles the source code* to a chosen path and file *as a programme* for the platform you are working on
 
-3.4: pressing Shift+F2 compiles the source code to a choosen path and file as an applet
+3.4: pressing *Shift+F2 compiles the source code* to a chosen path and file *as an applet*
 
-3.5: pressing F4 directly runs the coded application in window mode (V 1.0), while Shift+F4 runs it in fullscreen mode. (V 1.1)
+3.5: pressing *F4* directly *runs* the coded application in window mode (V 1.0), while *Shift+F4* runs it in fullscreen mode. (V 1.1)
 
-3.6: pressing F7 starts [HWCC] with given paths and file/application names (see screenshot 2.2)
+3.6: pressing *F7* starts *[HWCC]* with given paths and file/application names (see screenshot 2.2)
 
-3.7: pressing ESC after typing the beginning of a Hollywood function or keyword completes the word automatically
+3.7: pressing *ESC* after typing the beginning of a Hollywood function or keyword completes the word automatically
 
-3.8: pressing Strg+Space after typing the beginning of a Hollywood function or keyword shows a list of all possible functions to insert at cursor position (intellisense)
+3.8: pressing *Strg+Space* after typing the beginning of a Hollywood function or keyword shows a list of all possible functions to insert at cursor position (*intellisense*)
+
+http://img683.imageshack.us/img683/4690/intellisense.jpg
 
 
-3.9: pressing Shift+Space after typing in some text completes the word if it was already typed in before (standard Cubic feature)
+3.9: pressing *Shift+Space* after typing in some text completes the word if it was already typed in before (standard Cubic IDE feature)
 
-3.10: several patterns can be typed it to insert complete text templates at cursor position for control structures and blocks
-==>
+3.10: several patterns can be typed in to insert complete text templates at cursor position for control structures and blocks
+
+http://img87.imageshack.us/img87/9309/ifel1.jpg ==> http://img511.imageshack.us/img511/2157/ifel2.jpg
+
 The following patterns are supported:
  * If. ==> If-EndIf
  * Ifel. ==> If-Else-EndIf
