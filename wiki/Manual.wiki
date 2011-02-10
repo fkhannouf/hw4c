@@ -26,17 +26,19 @@ http://img547.imageshack.us/img547/2156/helpinfo.jpg
 http://img832.imageshack.us/img832/3345/helpchapters.jpg
 
 
-1.4.1: all hws and hwd files that are located in the same (project) directory are listed on left side of Cubic for quicker access.
+1.4.1: all hws and hwd files that are located in the same (project) directory are listed on left side of Cubic IDE for quicker access.
 
 http://img696.imageshack.us/img696/286/projfiles.jpg
 
 
-1.4.2: Now also image files of the types iff, jpg, png, gif, bmp are listed in a third section. If you simple click the filename of an image it will be opened. If you hold the Shift key while clicking it the filename will be insert into you sourcecode. (V 1.1)
+1.4.2: Now also image files of the types iff, jpg, png, gif, bmp are listed in a third section. If you simple click the filename of an image it will be opened. If you hold the Shift key while clicking it the filename will be insert into you source code. (V 1.1)
 
-1.5: access to all example source codes that are shiped with Hollywood on left side of Cubic
+1.5: access to all example source codes that are shipped with Hollywood on left side of Cubic IDE
+
+http://img511.imageshack.us/img511/9537/projexamples.jpg
 
 
-1.6: automatic indention for the following control structures and blocks:
+1.6: *automatic indention* for the following control structures and blocks:
  * If-Else-ElseIf-EndIf
  * While-Wend
  * For-Next
@@ -45,13 +47,15 @@ http://img696.imageshack.us/img696/286/projfiles.jpg
  * Function-EndFunction
  * Block-EndBlock
 
-1.7: corressponding bracket (), [], {} is marked when cursor is over the other bracket
+1.7: corresponding bracket (), [], {} is marked when cursor is over the other bracket
 
 1.8: separate Hollywood menu while holding right mouse button over GoldED title bar or top of screen respectively
 
 1.9: available in English and German
 
-1.10: compile, debug and error output: Hollywood 4 users will now recognize a new container called "Output". This container show all compile, debug and error output instead of opening a new shell window. Additionally, if you click on a message line that shows an error you will be directed to the corresponding line in the source code. (V 1.1) Attention: AmiKit users should read the FAQ!
+1.10: *compile, debug and error output:* Hollywood 4 users will now recognize a new container called "Output". This container show all compile, debug and error output instead of opening a new shell window. Additionally, if you click on a message line that shows an error you will be directed to the corresponding line in the source code. (V 1.1) *Attention:* AmiKit users should read the [Manual#4_Troubleshooting/FAQ]!
+
+http://img547.imageshack.us/img547/5786/outpute.jpg
 
 
 1.11: if you right click a file name like `@BRUSH 1, "test.iff"` you can choose to open the media file (with multiview) (V 1.1)
