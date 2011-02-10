@@ -11,8 +11,9 @@ It was created with AmiKit and OS 3.9, but should work on all platforms that can
 You can download hw4cubic here: http://www.amiga-resistance.info/phpbb33/downloads.php?view=detail&df_id=391
 
 =1 General=
-1.1: syntax highlightning for all Hollywood keywords and functions (depending on you Hollywood version); special labeling for obsolete Hollywood commands, so updating the source code to recommend Hollywood version should be much easier now
+1.1: *syntax highlighting* for all Hollywood keywords and functions (depending on you Hollywood version); special labelling for obsolete Hollywood commands, so updating the source code to recommend Hollywood version should be much easier now
 
+http://img248.imageshack.us/i/synhigh.jpg/
 
 1.2: help information after entering a Hollywood function at bottom of Cubic (context sensitive)
 
