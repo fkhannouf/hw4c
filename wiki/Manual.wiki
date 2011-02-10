@@ -6,7 +6,7 @@
 =0 Requirements=
 
 You need to have an installed Cubic IDE and at least Hollywood 3.0 to use this add on. With version 1.1 hw4cubic automatically distinguishes between Hollywood 3 and Hollywood 4, as with Hollywood 4 you have additonal features!
-It was created with AmiKit and OS 3.9, but should work on all platforms that can run Cubic IDE. But if you encounter problems on your platform write a mail to the address provided in the Legal Notice section or post a report in the hw4cubic-Thread ~~at Amiga-Resistance.info: http://www.amig-resistance.info/phpbb33/viewtopic.php?f=38&t=1919~~ at the official Hollywood Board: http://forums.hollywood-mal.com/viewtopic.php?f=12&t=4
+It was created with AmiKit and OS 3.9, but should work on all platforms that can run Cubic IDE. But if you encounter problems on your platform write a mail to the address provided in the Legal Notice section or post a report in the hw4cubic-Thread ~~at Amiga-Resistance.info: http://www.amig-resistance.info/phpbb33/viewtopic.php?f=38&t=1919 ~~ at the official Hollywood Board: http://forums.hollywood-mal.com/viewtopic.php?f=12&t=4
 
 You can download the latest version of hw4cubic here in the [http://code.google.com/p/hw4c/downloads/list Downloads section].
 
