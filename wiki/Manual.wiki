@@ -136,11 +136,11 @@ The following patterns are supported:
 3.12: pressing *Ctrl+f* while the cursor is over the call of a user defined function will *jump to its definition*
 
 =4 Troubleshooting/FAQ=
-Q: I use AmiKit and Hollywood 4. Nearly everytime I compile my source code AmiKit freezes and I have to reboot. What's the problem?
-A: It isn't completely clear yet what causes the problem, but a workaround is to disable the tooltype "TOOLPRI" of the application "LimpidClock" (right click on "Limpid Clock" icon, choose "Information", scroll down and double click the entry "TOOLPRI", and save the settings)
+*Q:* I use AmiKit and Hollywood 4. Nearly everytime I compile my source code AmiKit freezes and I have to reboot. What's the problem?<br>
+*A:* It isn't completely clear yet what causes the problem, but a workaround is to disable the tooltype "TOOLPRI" of the application "LimpidClock" (right click on "Limpid Clock" icon, choose "Information", scroll down and double click the entry "TOOLPRI", and save the settings)
 
-Q: I already have an older version of hw4cubic installed. How can I update?
-A: Just download the latest archive, unpack it and run the install script (choose "Install ...").
+*Q:* I already have an older version of hw4cubic installed. How can I update?<br>
+*A:* Just download the latest archive, unpack it and run the install script (choose "Install ...").
 
 
 =Version History=
