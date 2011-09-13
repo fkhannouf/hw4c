@@ -1,0 +1,736 @@
+; FILEZ LIBRARY
+; Support library for common file-related operations
+; --------------------------------------------------
+Const #FILEZ_FIRSTAVAILABLEID = 501					; First file id used for id auto-tracking
+Const #FILEZ_LASTAVAILABLEID  = 999					; Last file id ised for id auto-tracking
+
+Const #START_TABLE_MARKER = "* SECTION *"			; Load/Save table: table start marker
+Const #END_TABLE_MARKER   = "* END SECTION *"	; Load/Save table: table end marker
+
+Const #SIZEUNIT_BYTE = 1
+Const #SIZEUNIT_KILO = 2
+Const #SIZEUNIT_MEGA = 3
+Const #SIZEUNIT_GIGA = 4
+Const #SIZEUNIT_TERA = 5
+Const #SIZEUNIT_AUTO = -1
+
+Filez = { Id = {}, Files = {} }						; File id tracking structure
+
+/* INDEX                                                                           *
+ * - LOAD/SAVE TABLE FUNCTIONS --------------------------------------------------- *
+ *     > Filez.SaveTable(table, filename, no_index)                                *
+ *     > Filez.LoadTable(table, filename)                                          *
+ *     PRIVATE: > Filez.SaveSubTable(table, fileid, no_index)                      *
+ *     PRIVATE: > Filez.LoadSubTable(table, fileid)                                *
+ *                                                                                 *
+ * - FILE ID ALLOCATION/DEALLOCATION, OPENING AND CLOSING ------------------------ *
+ *     > Filez.GetID()                                                             *
+ *     > Filez.FreeID(id)                                                          *
+ *     > Filez.Open(filename, mode)                                                *
+ *     > Filez.Close(filename)                                                     *
+ *     > Filez.FindID(filename)                                                    *
+ *                                                                                 *
+ * - FILENAME CHECKING ----------------------------------------------------------- *
+ *     > Filez.FilenameSuffix(filename, suffix, force)                             *
+ *                                                                                 *
+ * - LOW LEVEL READ/WRITE OPERATIONS --------------------------------------------- *
+ *     > Filez.WriteHString(fileid, text)                                          *
+ *                                                                                 *
+ * - FILE SEARCHING FUNCTIONS ---------------------------------------------------- *
+ *     > Filez.Search(StartingDir, Pattern, Recursive, DirProgressFunc,            *
+ *                    FileProgressFunc, FoundProgressFunc)                         *
+ ********************************************************************************* */
+
+/* Initialize the file id auto tracking table */
+	For Local c = #FILEZ_FIRSTAVAILABLEID To #FILEZ_LASTAVAILABLEID
+	   Filez.id[c] = 0
+	Next
+
+/* LOAD/SAVE TABLE FUNCTIONS */
+	Function Filez.SaveTable(table, filename, no_index)
+		;     ------------------------------------------
+		; Save the table <table> in the file <filename>, if <no_index> is a non #NIL
+		; value then the table index will be saved too
+	   If Exists(filename) Then DeleteFile(filename)
+
+	   Local id = Filez.Open(filename, #MODE_READWRITE)
+	    
+	   Filez.SaveSubTable(table, id, no_index)
+	   Filez.Close(filename)
+	EndFunction
+	Function Filez.LoadTable(table, filename)
+		;     --------------------------------
+		; Load the table stored in <filename> in the table <table>,
+	   If Not(Exists(filename)) Then Return
+	   Local id = Filez.Open(filename, #MODE_READ)
+	    
+	   Filez.LoadSubTable(table, id)
+	   Filez.Close(filename)
+	   Return(table)
+	EndFunction
+	Function Filez.SaveSubTable(table, fileid, no_index)
+		;     -------------------------------------------
+		; *** PRIVATE ***
+		; This function is used by <Filez.SaveTable> for recursive table save
+	   Local a, b, it
+	    
+	   a, b = NextItem(table)
+	   While GetType(a) <> #NIL
+	      If GetType(a) = #NUMBER Then ax = "$$" .. StrStr(a) Else ax = a
+			  
+	      If GetType(b) = #TABLE
+	         WriteLine(fileid, ax)
+	         WriteLine(fileid, #START_TABLE_MARKER)
+	         Filez.SaveSubTable(b, fileid)
+	         WriteLine(fileid, "-----")
+	         WriteLine(fileid, #END_TABLE_MARKER)
+	      ElseIf GetType(b) = #FUNCTION
+	         ; ---
+	      Else
+	         If GetType(no_index) = #NIL Then WriteLine(fileid, ax)
+	         If GetType(b) = #STRING
+	            If b = Chr(10) Then b = "<*ENTER_KEY*>"
+	            WriteLine(fileid, "[STRING]" .. b)
+	         Else
+	            WriteLine(fileid, "[NUMBER]" .. b)
+	         EndIf
+	      EndIf
+	      a, b = NextItem(table, a)
+	   Wend
+	EndFunction
+	Function Filez.LoadSubTable(table, fileid)
+		;     ---------------------------------
+		; *** PRIVATE ***
+		; This function is used by <Filez.loadTable> for recursive table load
+		; 17.01.2011 : Aggiunto parsing del commento //
+		;
+	   If Eof(fileid) Then Return
+	   Local a
+	   Local b = ""
+
+	   While Not(Eof(fileid)) And b <> #END_TABLE_MARKER
+	      a = ReadLine(fileid)
+	      ; COMMENTI su riga che inizia per '//'
+	      If a <> "//"
+   			If LeftStr(a, 2) = "$$" Then a = Val(RightStr(a, StrLen(a) - 2))
+   	      b = ReadLine(fileid)
+
+   	      If b = #START_TABLE_MARKER
+   	         table[a] = {}
+   	         Filez.LoadSubTable(table[a], fileid)
+   	      ElseIf b <> #END_TABLE_MARKER
+   	         If LeftStr(b, 8) = "[STRING]"
+   	            b = RightStr(b, StrLen(b) - 8)
+   	            If b = "<*ENTER_KEY*>" Then b = Chr(10)
+   	               table[a] = b
+   	            Else
+   	               bn = Val(RightStr(b, StrLen(b) - 8))
+   	               table[a] = bn
+   	            EndIf
+   	         ;table[a] = b
+   	      EndIf
+         EndIf
+	   Wend
+	EndFunction
+
+/* FILE ID ALLOCATION/DEALLOCATION, OPENING AND CLOSING */
+	Function Filez.GetID()
+		;     -------------
+		; Returns the first available id for a file opening operation,
+		; if all ids are busy then -1 will be returned.
+		; The returned id will be marked as busy.
+	   Local found = -1
+	   Local c
+	   For c = #FILEZ_FIRSTAVAILABLEID To #FILEZ_LASTAVAILABLEID
+	      If Filez.id[c] = 0
+	         found = c
+	         Filez.id[c] = 1
+	         Break
+	      EndIf
+	   Next
+	   Return(found)
+	EndFunction
+	Function Filez.FreeID(id)
+		;     ----------------
+		; Free a previously id returned by <Filez.GetID>
+	   Filez.id[id] = 0
+	EndFunction
+	Function Filez.Open(filename, mode)
+		;     --------------------------
+		; Open the file named <filename> with the given <mode>,
+		; the function will return the id associated with the file or
+		; -1 if no more file id are available.
+		Local id = Filez.GetID()
+	   If id = -1 Then Return(-1)
+	   OpenFile(id, filename, mode)
+	   Filez.Files[id] = filename    
+	   Return(id)
+	EndFunction
+	Function Filez.Close(filename)
+		;     ---------------------
+		; Close the given filename previously opened using the function
+		; <Filez.Open>
+	   Local id
+	   id = Filez.FindID(filename)
+	   If id = -1 Then Return
+	   Filez.FreeID(id)
+	   Filez.Files[id] = nil
+	   CloseFile(id)
+	EndFunction
+	Function Filez.FindID(filename)
+		;     ----------------------
+		; Returns the id associated with the opened file <filename>,
+		; If no opened file will be found the the returned id will be -1.
+	   Local c
+	   Local found = -1
+	   For c = #FILEZ_FIRSTAVAILABLEID To #FILEZ_LASTAVAILABLEID
+	      If Filez.id[c] = 1
+	         If Filez.Files[c] = filename
+	            found = c
+	            Break
+	         EndIf
+	      EndIf
+	   Next
+	   Return(found)
+	EndFunction
+
+/* FILENAME CHECKING */
+	Function Filez.FilenameSuffix(filename, suffix, force)
+		;     ---------------------------------------------
+		; Check if the given <filename> has the specified <suffix>, and if <force>
+	   ; is not <nil> add to the filename the given <suffix>.
+	   ;   INPUT:  filename		--> File name to process
+		;           suffix		--> File suffix to check/add
+		;           force		   --> Suffix forcing flag
+		;   OUTPUT: check		   --> "Yes" if <suffix> is present otherwise "No".
+		; 			   filename		--> Processed file name
+		;           error		   --> Error/Warning description
+	   If helpers.IsNil(filename) = 1
+	      ; ERROR: Filename is NIL
+	      Return(nil, nil, "FilenameSuffix(): Cannot proceed, <filename> is <nil>.")
+	   EndIf
+	   
+	   sffxlen = StrLen(suffix)
+
+	   If sffxlen < 2
+	      ; ERROR: Illegal suffix lenght
+	      Return(nil, nil, "FilenameSuffix(): Cannot proceed, <suffix> is <nil>.")
+	   EndIf
+	   
+	   ; Check <filename> suffix
+	   sffix = RightStr(filename, sffxlen)
+
+	   If sffix <> suffix
+	      ; Provided suffix not present
+	      If helpers.IsNil(force) = 0
+	         ; Adding the provided suffix
+	         filename = filename .. suffix		
+	         Return("Yes", filename, nil)
+	      Else
+	         Return("No", filename, nil)
+	      EndIf
+	   Else
+	      Return("Yes", filename, nil)
+	   EndIf
+	EndFunction
+
+/* LOW LEVEL READ/WRITE OPERATIONS */
+	Function Filez.WriteHString(fileid, text)
+		;     --------------------------------
+	   ; Write a string with an header containing its lenght
+		; Returns -1 if an error is occurred.
+	   If helpers.IsNil(text) = 1 Or helpers.IsNil(fileid) = 1 Then Return(-1)
+	    
+	   Local text_len = StrLen(text)
+	   WriteShort(fileid, text_len)
+	   WriteString(fileid, text, text_len)
+	EndFunction
+
+/* FILE SEARCHING FUNCTIONS */
+	Function Filez.Search(StartingDir, Pattern, Recursive, DirProgressFunc, FileProgressFunc, FoundProgressFunc)
+		;     ---------------------------------------------------------------------------------------------------
+	   ; This function will search for a file pattern and returns all matching files found.
+		;  INPUT:	StartingDir			--> Starting search position
+		;				Pattern				--> File pattern to search (DOES NOT WORK ON WIN32 and MACOS)
+		;				Recursive			--> TRUE/FALSE: used to activate the recursive search inside
+		;                                 the subdirectories
+		;           DirProgressFunc	--> Optional function to call when the scan change the searching directory
+		;				FileProgressFunc	--> Optional function to call when the scan get the next file to check
+		;				FoundProgressFunc	--> Optional function to call when the scan found a matching file
+		;  OUTPUT:	MatchingFiles		--> A table containing all matching files found
+		;
+		; NOTES:
+		;		DirProgressFunc will be called with <CurrentDirectory> parameter
+		;     FileProgressFunc will be called with <CurrentFile> parameter
+		;     FoundProgressFunc will be called with <MatchingFileCount> and <MatchingFilename> parameters
+		
+	   Local MatchingFiles = {}
+	   
+	   Local fCount, dCount
+	   Local Files = {}
+	   Local Dirs  = {}
+	   Local fCount, dCount = ReadDirectory(StartingDir, Files, Dirs)
+
+	   ; Memorizza i File che rispettano i criteri 
+	   Local mfCnt = helpers.CountEntries(MatchingFiles)
+	   
+      Local gv = GetVersion()
+
+	   If helpers.IsNil(DirProgressFunc) = 0 Then DirProgressFunc(StartingDir)
+	   For Local c = 1 To fCount
+	      If helpers.IsNil(FileProgressFunc) = 0 Then FileProgressFunc(Files[c-1])
+	      Local Separator = IIF(RightStr(StartingDir, 1) = ":", "", "/")
+         
+         If gv.Platform = "Win32" Or gv.Platform = "MacOS"
+               Local fss = FileSize(FullPath(StartingDir, Files[c-1]))
+   	         MatchingFiles[mfCnt] = { Files[c-1], StartingDir, fss }
+   	         mfCnt = mfCnt + 1
+   	         If helpers.IsNil(FoundProgressFunc) = 0 Then FoundProgressFunc(mfCnt, Files[c-1])
+         Else
+   	      If MatchPattern(Files[c-1], Pattern)
+               Local fss = FileSize(FullPath(StartingDir, Files[c-1]))
+               ; Skippa i file che non è possibile aprire (tipo i link)
+               ExitOnError(False)
+               Local check = GetFileAttributes(FullPath(StartingDir, Files[c-1]))
+               Local lerr = GetLastError()
+               If lerr = 0
+      	         MatchingFiles[mfCnt] = { Files[c-1], StartingDir, fss }
+      	         mfCnt = mfCnt + 1
+               EndIf
+               ExitOnError(True)
+   	         If helpers.IsNil(FoundProgressFunc) = 0 Then FoundProgressFunc(mfCnt, Files[c-1])
+   	      EndIf
+         EndIf
+         
+         ; Se l'utente preme ESC la scansione termina
+         If IsKeyDown("ESC") Then Break
+	   Next
+	   
+	   If Recursive
+	      Local FoundFiles = {}
+	      Local Chain = ""
+	      If RightStr(StartingDir, 1) <> ":" Then Chain = "/"
+	         
+	      For Local c = 1 To dCount
+	         FoundFiles = Filez.Search(FullPath(StartingDir, Dirs[c-1]), Pattern, Recursive, DirProgressFunc, FileProgressFunc, FoundProgressFunc, mfCnt)
+	         Local ffCnt = helpers.CountEntries(FoundFiles)
+	         Local mfCnt = helpers.CountEntries(MatchingFiles)
+	         For Local i = 0 To ffCnt - 1
+	            Local Separator = IIF(RightStr(FoundFiles[i][1], 1) = ":", "", "/")
+	            Local fss = FileSize(FullPath(FoundFiles[i][1], FoundFiles[i][0]))
+               ; Skippa i file che non è possibile aprire (tipo i link)
+               ExitOnError(False)
+               Local check = GetFileAttributes(FullPath(FoundFiles[i][1], FoundFiles[i][0]))
+               Local lerr = GetLastError()
+               If lerr = 0
+   	            MatchingFiles[mfCnt] = { FoundFiles[i][0], FoundFiles[i][1], fss }
+   	            mfCnt = mfCnt + 1
+               EndIf
+               ExitOnError(True)
+
+	            ;MatchingFiles[mfCnt] = { FoundFiles[i][0], FoundFiles[i][1], fss }
+	            ;mfCnt = mfCnt + 1
+	            
+               ; Se l'utente preme ESC la scansione termina
+               If IsKeyDown("ESC") Then Break(2)
+	         Next
+            ; Se l'utente preme ESC la scansione termina
+            If IsKeyDown("ESC") Then Break
+
+	      Next
+	   EndIf
+	   
+	   Return(MatchingFiles)
+	EndFunction
+
+Function Filez.ID3_GetFrameSize_4(nf)
+      Local b = { }
+      b[1] = ReadChr(nf)
+      b[2] = ReadChr(nf)
+      b[3] = ReadChr(nf)
+      b[4] = ReadChr(nf)
+      
+      BitClear(b[1],7)
+      BitClear(b[2],7)
+      BitClear(b[3],7)
+      BitClear(b[4],7)
+      
+      Local FS = b[1] * 128 * 128 * 128 + b[2] * 128 * 128 + b[3] * 128 + b[4]
+      Return(FS)
+EndFunction
+Function Filez.ID3_StripZero(txt)
+   ; Remove all 0 characters
+   Local l = StrLen(txt)
+   Local t = ""
+   Local z = 0
+   
+   For Local i = 0 To l - 1
+      Local c = MidStr(txt, i, 1)
+      If Asc(c) <> 0
+         t = t .. c
+      Else
+         z = z + 1
+      EndIf
+   Next
+   Return(t)
+EndFunction
+Function Filez.ID3_OnlySpaces(txt)
+   ; test if txt contains only spaces
+   Local l = StrLen(txt)
+   Local os = True
+   
+   For Local i = 0 To l - 1
+      Local c = MidStr(txt, i, 1)
+      If c <> " "
+         os = False
+         Break
+      EndIf
+   Next
+   Return(os)
+EndFunction
+Function clean(Content)
+   Local t = ""
+   t = Filez.ID3_StripZero(Content)
+   t = TrimStr(t, " ", False)
+   t = TrimStr(t, " ", True)
+   Return(t)
+EndFunction
+
+Function Filez.CheckID3(filename)
+   ; Check for ID3 tag and returns
+   ; - ID3 v1     True|False
+   ; - ID3 v2     True|False
+   ; - ID3v1Info  ID3 v1 Informations
+   ; - ID3v2Info  ID3 v2 Informations
+   
+   Local ID3v1 = False
+   Local ID3v2 = False
+   Local ID3v1Info = {}
+   Local ID3v2Info = {}
+
+   Local GenreList = { "Blues", "Classic Rock", "Country", "Dance", "Disco",
+                       "Funk", "Grunge", "Hip-Hop", "Jazz", "Metal", "New Age",
+                       "Oldies", "Other", "Pop", "R&B", "Rap", "Reggae", "Rock",
+                       "Techno", "Industrial", "Alternative", "Ska", "Death Metal",
+                       "Pranks", "Soundtrack", "Euro-Techno", "Ambient",
+                       "Trip-Hop", "Vocal", "Jazz+Funk", "Fusion", "Trance",
+                       "Classical", "Instrumental", "Acid", "House", "Game",
+                       "Sound Clip", "Gospel", "Noise", "Alternative Rock",
+                       "Bass", "Soul", "Punk", "Space", "Meditative",
+                       "Instrumental Pop", "Instrumental Rock", "Ethnic",
+                       "Gothic", "Darkwave", "Techno-Industrial", "Electronic",
+                       "Pop-Folk", "Eurodance", "Dream", "Southern Rock",
+                       "Comedy", "Cult", "Gangsta", "Top 40", "Christian Rap",
+                       "Pop/Funk", "Jungle", "Native US", "Cabaret", "New Wave",
+                       "Psychadelic", "Rave", "Showtunes", "Trailer", "Lo-Fi",
+                       "Tribal", "Acid Punk", "Acid Jazz", "Polka", "Retro",
+                       "Musical", "Rock & Roll", "Hard Rock", "Folk",
+                       "Folk-Rock", "National Folk", "Swing", "Fast Fusion",
+                       "Bebob", "Latin", "Revival", "Celtic", "Bluegrass",
+                       "Avantgarde", "Gothic Rock", "Progressive Rock",
+                       "Psychedelic Rock", "Symphonic Rock", "Slow Rock",
+                       "Big Band", "Chorus", "Easy Listening", "Acoustic",
+                       "Humour", "Speech", "Chanson", "Opera", "Chamber Music",
+                       "Sonata", "Symphony", "Booty Bass", "Primus", "Porn Groove",
+                       "Satire", "Slow Jam", "Club", "Tango", "Samba", "Folklore",
+                       "Ballad", "Power Ballad", "Rhythmic Soul", "Freestyle",
+                       "Duet", "Punk Rock", "Drum Solo", "Acapella", "Euro-House",
+                       "Dance Hall", "Goa", "Drum & Bass", "Club - House",
+                       "Hardcore", "Terror", "Indie", "BritPop", "Negerpunk",
+                       "Polsk Punk", "Beat", "Christian Gangsta Rap",
+                       "Heavy Metal", "Black Metal", "Crossover", "Contemporary Christian",
+                       "Christian Rock", "Merengue", "Salsa", "Thrash Metal",
+                       "Anime", "JPop", "Synthpop", "Unknown" }
+
+
+   ; Apertura file
+   Local nf = OpenFile(Nil, Filename, #MODE_READ)
+
+   ; Verifica dimensione file
+   If FileLength(nf) < 512
+      CloseFile(nf)
+      Return(ID3v1, ID3v2, ID3v1info, ID3v2Info)
+   EndIf
+
+   ; Lettura header
+   Local id3_tag = ReadString(nf, 3)
+   
+   
+   If id3_tag = "ID3"
+      ID3v2    = True
+      
+      ; Version & Revision
+      ID3v2info.version  = ReadChr(nf)
+      ID3v2info.revision = ReadChr(nf)
+      
+      ; Flags
+      ID3v2info.flags = ReadChr(nf)
+      
+      ; Frame Size
+      FrameSize = Filez.ID3_GetFrameSize_4(nf)
+      ID3v2info.FrameSize = FrameSize + 10
+
+      If ID3v2info.version = 3
+         ; --- VERSIONE 3 ---
+         ; Lettura TAGS
+         Local GetTag = True
+         Local TypeSize = 0
+         Local FrameType = ""
+         Local Content = ""
+         Local TypeFlag1 = 0
+         Local TypeFlag2 = 0
+         Local Encoding = 0
+       
+         Local allowed = True
+       
+         While GetTag
+
+            If FrameSize <= 0
+               ; Verifica limite frame
+               GetTag = False
+            Else
+               ; Legge il tipo di frame
+               FrameType = ReadString(nf, 4)
+               
+               ; Verifica che sia valido altrimenti termina
+               For i = 0 To 3
+                  If (Asc(MidStr(FrameType, i, 1))) = 0
+                     Allowed = False
+                     Break
+                  EndIf
+               Next
+               If Not(Allowed)
+                  GetTag = False
+               Else
+                  ; Il tipo di frame e' ok, legge la dimensione del frame
+                  TypeSize = Filez.ID3_GetFrameSize_4(nf)
+
+                  ; Legge i flags
+                  TypeFlag1 = ReadChr(nf)
+                  TypeFlag2 = ReadChr(nf)
+                  
+                  ; Se si tratta di un campo di testo legge il tipo di encoding
+                  If LeftStr(FrameType, 1) = "T"
+                     ; Text Field
+                     Encoding = ReadChr(nf)
+
+                     ; Legge il contenuto del frame
+                     If TypeSize > 1
+                        Content = ReadString(nf, TypeSize - 1)
+                     Else
+                        Content = ""
+                     EndIf
+                    
+                     If Encoding = 1
+                        ; Conversione
+                        Local l = StrLen(Content)
+                        Local Converted = ""
+                        For i = 0 To l - 1
+                           If Asc(MidStr(Content, i, 1)) <> 0
+                              If i > 1 Then Converted = Converted .. MidStr(Content, i, 1)
+                           EndIf
+                        Next
+                        Content = Converted
+
+                     EndIf
+                  EndIf
+            
+                  Content = Filez.ID3_StripZero(Content)
+                  Content = TrimStr(Content, " ", False)
+                  Content = TrimStr(Content, " ", True)
+                  ;If Filez.ID3_OnlySpaces(Content) Then Content = ""
+
+                  FrameSize = FrameSize - TypeSize
+                  
+                  ; Memorizza le informazioni
+                  Switch FrameType
+                     ; ===== TEXT FIELDS ====
+                     Case "TALB"
+                        ID3v2Info.Album = Content
+                        
+                     Case "TBPM"
+                        ID3v2Info.BPM = Content
+                        
+                     Case "TCOM"
+                        ID3v2Info.Composer = Content
+                        
+                     Case "TCON"
+                        ID3v2Info.ContentType = Content
+                        
+                     Case "TCOP"
+                        ID3v2Info.CopyrightMessage = Content
+                        
+                     Case "TDAT"
+                        ID3v2Info.RecordingDate = Content
+                        
+                     Case "TDLY"
+                        ID3v2Info.PlaylistDelay_ms = Content
+                        
+                     Case "TENC"
+                        ID3v2Info.Encoder = Content
+                        
+                     Case "TEXT"
+                        ID3v2Info.Lyricist = Content
+                        
+                     Case "TFLT"
+                        Local SubType = ""
+                        If LeftStr(Content, 3) = "MPG"
+                           Local t = MidStr(Content, 5, 1)
+                           
+                           Switch t
+                              Case "1"
+                                 SubType = " 1/2 layer I"
+                              Case "2"
+                                 If MidStr(Content, 7, 1) = "5"
+                                    SubType = " 2.5"
+                                 Else
+                                    SubType = " 1/2 layer II"
+                                 EndIf
+                              Case "3"
+                                 SubType = " 1/2 layer III"
+                           EndSwitch
+                        EndIf
+                           
+                        ID3v2Info.FileType = Content .. SubType
+                        
+                     Case "TIME"
+                        ID3v2Info.RecordingTime = Content
+
+                     Case "TIT1"
+                        ID3v2Info.ContentGroup = Content
+                        
+                     Case "TIT2"
+                        ID3v2Info.SongTitle = Content
+                        
+                     Case "TIT3"
+                        ID3v2Info.SongSubTitle = Content
+                        
+                     Case "TKEY"
+                        ID3v2Info.StartingKey = Content
+                        
+                     Case "TLAN"
+                        ID3v2Info.LyricsLanguage = Content
+                        
+                     Case "TLEN"
+                        ID3v2Info.SongLenght_ms = Content
+                        
+                     Case "TMED"
+                        ID3v2Info.MediaType = Content
+                        
+                     Case "TOAL"
+                        ID3v2Info.OriginalAlbum = Content
+                        
+                     Case "TOFN"
+                        ID3v2Info.OriginalFilename = Content
+                        
+                     Case "TOLY"
+                        ID3v2Info.OriginalLyricist = Content
+                        
+                     Case "TOPE"
+                        ID3v2Info.OriginalPerformers = Content
+                        
+                     Case "TORY"
+                        ID3v2Info.OriginalReleaseYear = Content
+                        
+                     Case "TOWN"
+                        ID3v2Info.FileOwner = Content
+                        
+                     Case "TPE1"
+                        ID3v2Info.LeadArtist = Content
+                        
+                     Case "TPE2"
+                        ID3v2Info.Band = Content
+                        
+                     Case "TPE3"
+                        ID3v2Info.Conductor = Content
+                        
+                     Case "TPOS"
+                        ID3v2Info.PartOfSet = Content
+                        
+                     Case "TPUB"
+                        ID3v2Info.Publisher = Content
+                        
+                     Case "TRCK"
+                        ID3v2Info.TrackNumber = Content
+                        
+                     Case "TRDA"
+                        ID3v2Info.RecordingDates = Content
+                        
+                     Case "TRSN"
+                        ID3v2Info.InternetRadioName = Content
+                        
+                     Case "TRSO"
+                        ID3v2Info.InternetRadioOwner = Content
+                        
+                     Case "TSIZ"
+                        ID3v2Info.SongSize = Content
+                        
+                     Case "TSRC"
+                        ID3v2Info.InternationaStandardRecordingCode = Content
+                        
+                     Case "TYER"
+                        ID3v2Info.RecordingYear = Content
+                        
+                     ;===== INTERNET LINK FIELDS =====
+                     Case "WCOM"
+                        ID3v2Info.Link_CommercialInfos = Content
+                        
+                     Case "WCOP"
+                        ID3v2Info.Link_CopyrightInfos = Content
+                        
+                     Case "WOAF"
+                        ID3v2Info.Link_OfficialAudioFile = Content
+                        
+                     Case "WOAR"
+                        ID3v2Info.Link_Artist = Content
+                        
+                     Case "WOAS"
+                        ID3v2Info.Link_OfficialAudioSource = Content
+                        
+                     Case "WORS"
+                        ID3v2Info.Link_OfficialInternetRadio = Content
+                        
+                     Case "WPAY"
+                        ID3v2Info.Link_Payment = Content
+                        
+                     Case "WPUB"
+                        ID3v2Info.Link_Publisher = Content
+                     
+                     ;===== CD INDENTIFIER =====
+                     Case "MCDI"
+                        ID3v2Info.CD_TOC = Content
+                        
+                     ;===== EMBEDDED PICTURE =====
+                     Case "APIC"
+                        ID3v2Info.RawEmbeddedPicture = Content
+                        
+                  EndSwitch
+               EndIf
+               
+            EndIf
+         Wend
+     EndIf
+   EndIf
+
+   ; Check ID3 v1
+   Local offset = FileLength(nf) - 128
+   Seek(nf, offset)
+   Local id3_tag = ReadString(nf, 3)
+   
+   If id3_tag = "TAG"
+      ID3v1 = True
+      ID3v1Info.SongTitle = Clean(ReadString(nf, 30))
+      ID3v1Info.Artist = Clean(ReadString(nf, 30))
+      ID3v1Info.Album = Clean(ReadString(nf, 30))
+      ID3v1Info.Year = Clean(ReadString(nf, 4))
+      ID3v1Info.Comment = Clean(ReadString(nf, 30))
+      Local gn = Val(Clean(StrStr(ReadChr(nf))))
+      If gn > 147 Then gn = 148
+      ID3v1Info.Genre = GenreList[gn]
+   EndIf
+
+   CloseFile(nf)
+   
+   Return(ID3v1, ID3v2, ID3v1info, ID3v2Info)
+   
+EndFunction

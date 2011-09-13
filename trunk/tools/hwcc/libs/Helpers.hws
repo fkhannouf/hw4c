@@ -1,0 +1,112 @@
+;———————————————————————————————————————————————————————————————————————————————
+Global HL = {}          ;                                     Main Helpers table
+
+HL.Version = "2011.02.13"
+
+;———————————————————————————————————————————————————————————————————————————————
+;———————————————————————————————————————————————————————————————————————————————
+; CONTENTS
+;  • HL.IsNil()                                  Check is the given value is nil
+;  • HL.ParseArgs()                             Parse the command line arguments
+;  • HL.SafeNil()             Returns the string 'NIL' if the given value is NIL
+;———————————————————————————————————————————————————————————————————————————————
+;———————————————————————————————————————————————————————————————————————————————
+
+;———————————————————————————————————————————————————————————————————————————————
+Function HL.IsNil(value)
+;———————————————————————————————————————————————————————————————————————————————
+; Returns TRUE if <value> is NIL otherwise returns FALSE
+;-------------------------------------------------------------------------------
+; INPUT:
+;  • value        value to check against NIL
+;
+; OUTPUT:
+;  • result       TRUE if <value> is NIL, otherwise FALSE
+;-------------------------------------------------------------------------------
+   
+   If GetType(value) = #NIL Then Return(True) Else Return(False)
+   
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+Function HL.ParseArgs(CaseSensitive)
+;———————————————————————————————————————————————————————————————————————————————
+; Parse command line arguments and return a table indexed by the argument and
+; with the value equal to the parameter.
+; Case sensitive is switched by default to TRUE, set to FALSE to parse arguments
+; and parameters without case distinctions.
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  • CaseSensitive   Optional switch to activate (True) case sensitive argument
+;                    recognition, defaults to True.
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • Result          A table indexed with the argument and with the value equal
+;                    to the argument value.
+;———————————————————————————————————————————————————————————————————————————————
+; NOTES
+; Example:
+;   shell>MyHWTest -test1 10 -test2 hello
+;
+;   HL.ParseArgs() will return the following table:
+;   result = { test1 = 10,
+;              test2 = 'hello' }
+;-------------------------------------------------------------------------------
+
+   If HL.IsNil(CaseSensitive) Then CaseSensitive = False
+   
+   Local Result = {}
+   Local Args, ArgsCount = GetCommandLine()
+
+   Local index, value = NextItem(Args)
+   While GetType(index) <> #NIL
+      If Not(CaseSensitive)
+         Result[value.arg] = value.param
+      Else
+         Result[LowerStr(value.arg)] = LowerStr(value.param)
+      EndIf
+      
+      index, value = NextItem(Args, index)
+      
+   Wend
+   
+   Return(Result)
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+Function HL.SafeNil(value)
+;———————————————————————————————————————————————————————————————————————————————
+; Returns the string 'NIL' if <value> is Nil, otherwise returns <value> without
+; modifications.
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  • value        value to check against NIL
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • Result       'NIL' if <value> is Nil, otherwise <value>
+;———————————————————————————————————————————————————————————————————————————————
+; NOTES
+; This func is useful for string concatenations where there is a risk that
+; the value to concatenate can be Nil, in this case the concatenation will raise
+; an error breaking the code execution.
+;
+; Example:
+;   DebugPrint("Hello " .. b)    ; In this case if <b> is Nil an error is raised
+;   DebugPrint("Hello " .. HL.SafeNil(b)) ; No errors will be raised in case <b>
+;                                         ; is Nil, at least you will get the
+;                                         ; output:  Hello NIL
+;-------------------------------------------------------------------------------
+
+   If HL.IsNil(value)
+      Return("NIL")
+   Else
+      Return(value)
+   EndIf
+   
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+; CHANGE LOG
+;———————————————————————————————————————————————————————————————————————————————
+; 2011.02.13 : Corrected some minor bugs
+
