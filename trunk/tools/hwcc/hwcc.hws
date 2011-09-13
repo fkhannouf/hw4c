@@ -1,9 +1,9 @@
 @APPTITLE "Hollywood-Cubic-Compiler"
-@APPVERSION "$VER: 0.8.5 (20.04.2009)"
+@APPVERSION "$VER: 0.9 (11.03.2009)"
 @APPAUTHOR "Michael Jurisch"
 @APPCOPYRIGHT   "(C) Copyright 2008 by Michael Jurisch"
 @VERSION 3,1
-@DISPLAY { Width = 350, Height = 380, Title = "Hollywood-Cubic-Compiler - Version: 0.8.5" }
+@DISPLAY { Width = 350, Height = 380, Title = "Hollywood-Cubic-Compiler - Version: 0.9" }
 
 @INCLUDE "Scuilib.hws"
 @INCLUDE "HWxGUI.hws" ; GUI elements depending on HW version
@@ -26,22 +26,16 @@
 ; info-Datei erzeugen (siehe HW-GUI) inkl. Eintrag im Tooltype (WINDOW, FULLSCREEN)
 ; Starten des Skripts per Button
 ; Das Problem mit dem Mac-Verzeichnis ist wohl mit HW4.0 weg -> Unterscheidung nach HW-Version, die auf System zur Verfügung steht
-; "Reset"-Button
-; Multilanguage-Unterstützung
-; MacOS -> "Resource"-Order. Da drin externe Daten!?
-; *.ini file for Win/Mac, AMiga hat Tooltypes. Das miteinander verbinden? Evnetuell Feature Request an Andreas
 ;;;
 
-;;; initialise the application
+; initialise the application
 Function init()
     ; some constants
-    Global winWidth$ = GetAttribute(#DISPLAY, 0, #ATTRWIDTH)
-    Global winHeight$ = GetAttribute(#DISPLAY, 0, #ATTRHEIGHT)
+    winWidth$ = GetAttribute(#DISPLAY, 0, #ATTRWIDTH)
+    winHeight$ = GetAttribute(#DISPLAY, 0, #ATTRHEIGHT)
 
-    Global bOutputDir = True ; Default: create separate dirs for every compiled version
-    Global tmpPath$ = "T:hwcc_output" ; temporary directory for compiling output
-
-    Global m_bHasCompiled = False ; this switch is true, if the user has compiled; used for finding out, whether setOptBGColor() has to be called
+    bOutputDir = True ; Default: create separate dirs for every compiled version
+    tmpPath$ = "T:hwcc_output" ; temporary directory for compiling output
 
     n$ = 0
     t$, n$ = GetCommandLine()
@@ -52,6 +46,8 @@ Function init()
         t$[1] = { arg = "", param = "" } ; -target - initialize the table
         t$[2] = { arg = "", param = "" } ; -appname - initialize the table
     EndIf
+
+    numOS = os.ChildCount - 1 ; number of available platforms
 
     ver$ = GetVersion() ; find out which OS is running this app
 
@@ -90,32 +86,29 @@ Function init()
     hwversion$ = LeftStr(ver$.version, 1)
 
 EndFunction
-;;;
 
-;;; deletes the file suffix of the appname (is get by \FILE of GoldED)
+; deletes the file suffix of the appname (is get by \FILE of GoldED)
 Function deleteAppSuffix()
     If FindStr(t$[2].param, ".hws", False) <> 0
         Return(ReplaceStr(t$[2].param, ".hws", "", False))
     EndIf
 EndFunction
-;;;
 
-;;; save default background color
+; save default background color
 Function getDefaultBGColor()
-    Global lblColor$ = {}
-    Global lblTxtColor$ = {}
-    Global strColor$ = {}
+    lblColor$ = {}
+    lblTxtColor$ = {}
+    strColor$ = {}
 
     Local lbl = scui.Get("lblTargetOS")
     lblColor$ = lbl.Bevel.Colors.Fill1
-    lblTxtColor$ = lbl.Text.Color
+    lblTxtColor$ =lbl.Text.Color
 
     Local str = scui.Get("strSourceFile");
     strColor$ = str.Bevel.Colors.Fill1
 EndFunction
-;;;
 
-;;; set the background color of certain elements
+; set the background color of certain elements
 Function setBGColor(msg)
     Local strSrcFile_id = scui.GetIFOID("strSourceFile")
     Local strTgtFile_id = scui.GetIFOID("strTargetFile")
@@ -129,27 +122,23 @@ Function setBGColor(msg)
         scui.Set("strAppName", { Bevel = { Colors = { Fill1 = strColor$ } } } , 1)
     EndIf
 
-    setOptBGColor()
-
     setStatus("default")
 EndFunction
-;;;
 
-;;; sets the background of option buttons after compiling back to original color
- Function setOptBGColor()
-    If m_bHasCompiled = True
-        Local opts = scui.Get("optTargetOS")
+Function setOptBGColor()
+    Local opts = scui.Get("optTargetOS")
+    Local i
 
-        For Local i = 1 To opts.ChildCount
-            scui.Set(opts.Childs[i], { PBevel = { Colors = { Fill1 = m_tOptColor } } }, 1 )
-        Next
-
-        m_bHasCompiled = False
-    EndIf
+    For i = 1 To opts.ChildCount
+        If opts.Childs[i].Value = 1 ; if the button is pressed
+            scui.Set(opts.Childs[i], { PBevel = { Colors = { Fill1 = { r = 255, g = 0, b = 0 } } } }, 1 )
+        Else
+            scui.Set(opts.Childs[i], { PBevel = { Colors = { Fill1 = { r = 0, g = 0, b = 255 } } } }, 1 )
+        EndIf
+    Next
 EndFunction
-;;;
 
-;;; empty the string boxes when pressing X
+; empty the string boxes when pressing "X"
 Function clearField(msg)
     Local butClrSrc_id = scui.GetIFOID("butClearSource")
     Local butClrTar_id = scui.GetIFOID("butClearTarget")
@@ -164,9 +153,7 @@ Function clearField(msg)
            appname$ = ""
     EndIf
 EndFunction
-;;;
 
-;;; sets the text and color of the status bar at the bottom of the window
 Function setStatus(status$)
     If status$ = "default"
         scui.Set("lblStatus", { Bevel = { Colors = { Fill1 = lblColor$ } } }, 1)
@@ -203,9 +190,9 @@ Function setStatus(status$)
         scui.Set("strAppName", { Clear1st = 1 })
     EndIf
 EndFunction
-;;;
 
-;;; opens the file open dialog for source file
+
+; opens the file open dialog for source file
 Function openSourceFileDialog()
     Local sf$ = scui.Get("strSourceFile")
     Local file$
@@ -221,9 +208,8 @@ Function openSourceFileDialog()
 
     ;setOptBGColor()
 EndFunction
-;;;
 
-;;; opens the file open dialog for target file
+; opens the file open dialog for target file
 Function openTargetFileDialog()
     Local tf$ = scui.Get("strTargetFile")
     Local path$
@@ -244,16 +230,14 @@ Function openTargetFileDialog()
         scui.Set("strTargetFile", { Value = path$ }, 1)
     EndIf
 EndFunction
-;;;
 
-;;; alters the name of the app after changing it in its Stringbox
+; alters the name of the app after changing it in its Stringbox
 Function alterAppName()
     Local app$ = scui.Get("strAppName")
     appname$ = app$.value
 EndFunction
-;;;
 
-;;; sets the compiling output mode
+; sets the compiling output mode
 Function setOutputMode()
     Local opts$ = scui.Get("optOutputMode")
     If opts$.Value[0] = 1     ; = "create directories"
@@ -262,9 +246,8 @@ Function setOutputMode()
         bOutputDir = False
     EndIf
 EndFunction
-;;;
 
-;;; compile function
+; compile function
 Function executeCompile(bOutputDir$, sPlatform$, sSource$, sTarget$, iOptEntry)
     Local tPath$ = tmpPath$
     Local path$
@@ -277,9 +260,9 @@ Function executeCompile(bOutputDir$, sPlatform$, sSource$, sTarget$, iOptEntry)
     MakeDirectory(tPath$)
 
     If bOutputDir = True
-        MakeDirectory(tPath$.."/"..sPlatform$) ; create dir for temp output
+        MakeDirectory(tPath$.."/"..sPlatform$)
 
-        MakeDirectory(sTarget$..sPlatform$) ; create dir for final output
+        MakeDirectory(sTarget$..sPlatform$)
 
         app$ = appname$
         path$ = sTarget$..sPlatform$
@@ -295,14 +278,10 @@ Function executeCompile(bOutputDir$, sPlatform$, sSource$, sTarget$, iOptEntry)
         app$ = app$..".exe"
     EndIf
 
-    If sPlatform$ = "applet"
-        app$ = app$..".hwa"
-    EndIf
-
     Execute("Hollywood "..sSource$.." -compile "..tPath$..app$.." -exetype "..sPlatform$.." -quiet")
 
     ; this has to be after the Execute comand!!!!!
-    If sPlatform$ = "macos" or sPlatform$ = "macos86"
+    If sPlatform$ = "macos"
         app$ = ""
     EndIf
 
@@ -312,7 +291,7 @@ Function executeCompile(bOutputDir$, sPlatform$, sSource$, sTarget$, iOptEntry)
         CopyFile(tPath$..app$, path$) ; kopiert Datei aus temporären Ordner in eigentlichen Ordner
         scui.Set(opts$.Childs[iOptEntry], { PBevel = { Colors = { Fill1 = { r = 0, g = 250, b = 0 } } } }, 1 )
         bCompileSuccess = True
-
+        
         DeleteFile(tmpPath$) ; temp-Ordner/Dateien wieder löschen
     Else ; Fehler beim Kompilieren
         scui.Set(opts$.Childs[iOptEntry], { PBevel = { Colors = { Fill1 = { r = 250, g = 0, b = 0 } } } }, 1 )
@@ -321,9 +300,8 @@ Function executeCompile(bOutputDir$, sPlatform$, sSource$, sTarget$, iOptEntry)
 
     Return({bCompileSuccess, bCompileError})
 EndFunction
-;;;
 
-;;; compiles the source file to the target file
+; compiles the source file to the target file
 Function compile()
     Local sf = scui.Get("strSourceFile")
     Local tf = scui.Get("strTargetFile")
@@ -334,10 +312,6 @@ Function compile()
     Local bCompileSuccess = False
     Local bCompileError = False
     
-    Local numOS = os.ChildCount - 1 ; number of available platforms
-
-    setOptBGColor() ; set bg color of option buttons back to default (in case they are green or red)
-
     If sf.value = ""
         scui.Set("strSourceFile", { Bevel = { Colors = { Fill1 = { r = 250, g = 0, b = 0 } } } }, 1 )
         scui.Set("strSourceFile", { Value = "Please enter or choose the source file!" }, 1 )
@@ -384,7 +358,7 @@ Function compile()
     ; for all available platforms
     For Local i = 0 To numOS
         If os.Value[i] = 1 ; if the option is selected
-            erg = executeCompile(bOutputDir, m_tCompilePlatform[i], sf.value, tf.value, i+1)
+            erg = executeCompile(bOutputDir, m_tCompilePlatform, sf.value, tf.value, 1)
             If erg[0] = 1
                 bCompileSuccess = True
             EndIf
@@ -395,6 +369,87 @@ Function compile()
         EndIf
     Next
 
+    If os.Value[0] = 1 ;AOS 3
+        erg = executeCompile(bOutputDir, "classic", sf.value, tf.value, 1)
+            If erg[0] = 1
+                bCompileSuccess = True
+            EndIf
+
+            If erg[1] = 1
+                bCompileError = True
+            EndIf
+    EndIf
+
+    If os.Value[1] = 1 ;AOS 4
+        erg = executeCompile(bOutputDir, "amigaos4", sf.value, tf.value, 2)
+        If erg[0] = 1
+            bCompileSuccess = True
+        EndIf
+
+        If erg[1] = 1
+            bCompileError = True
+        EndIf
+    EndIf
+
+    If os.Value[2] = 1 ;WarpOS
+        erg = executeCompile(bOutputDir, "warpos", sf.value, tf.value, 3)
+        If erg[0] = 1
+            bCompileSuccess = True
+        EndIf
+
+        If erg[1] = 1
+            bCompileError = True
+        EndIf
+    EndIf
+
+    If os.Value[3] = 1 ;MOS
+        erg = executeCompile(bOutputDir, "morphos", sf.value, tf.value, 4)
+        If erg[0] = 1
+            bCompileSuccess = True
+        EndIf
+
+        If erg[1] = 1
+            bCompileError = True
+        EndIf
+    EndIf
+
+    If os.Value[4] = 1 ;AROS
+        erg = executeCompile(bOutputDir, "aros", sf.value, tf.value, 5)
+        If erg[0] = 1
+            bCompileSuccess = True
+        EndIf
+
+        If erg[1] = 1
+            bCompileError = True
+        EndIf
+    EndIf
+
+    If os.Value[5] = 1 ;Win
+        erg = executeCompile(bOutputDir, "win32", sf.value, tf.value, 6)
+        If erg[0] = 1
+            bCompileSuccess = True
+        EndIf
+
+        If erg[1] = 1
+            bCompileError = True
+        EndIf
+    EndIf
+
+    If os.Value[6] = 1 ;MacOS
+        erg = executeCompile(bOutputDir, "macos", sf.value, tf.value, 7)
+        If erg[0] = 1
+            bCompileSuccess = True
+        EndIf
+
+        If erg[1] = 1
+            bCompileError = True
+        EndIf
+    EndIf
+
+    If os.Value[7] = 1 ;Applet
+        Execute("Hollywood "..sf.value.." -compile "..tf.value..appname$..".hwa -exetype applet")
+    EndIf
+
     If bCompileSuccess = True And bCompileError = False
         setStatus("compile_succ")
     ElseIf bCompileSuccess = False And bCompileError = True
@@ -402,12 +457,9 @@ Function compile()
     ElseIf bCompileSuccess = True And bCompileError = True
         setStatus("compile_succ_error")
     EndIf
-
-    m_bHasCompiled = True
 EndFunction
-;;;
 
-;;; TODO: opens option menu
+; opens option menu
 Function options()
     ; TODO
     ; temporären Ordner angeben (Default: T:hwcc_output)
@@ -415,9 +467,8 @@ Function options()
     ; Option, ob existierende Dateien (durch Kopieren) still überschrieben werden sollen oder ob nachgefragt werden soll
     ; Sprache?
 EndFunction
-;;;
 
-;;; select/deselect all options buttons
+; select/deselect all options buttons
 Function deSelectTargetOSOpt()
     Local optswitch = scui.Get("optDeSelTargetOS")
     Local opts = scui.Get("optTargetOS")
@@ -433,19 +484,20 @@ Function deSelectTargetOSOpt()
         Next
     EndIf
 EndFunction
-;;;
 
-;;; closes the programm
+; closes the programm
 Function exit()
     End()
 EndFunction
-;;;
 
 ;######### Function calls to initialize the program
 init()
 appname$ = deleteAppSuffix()
 
 ;######### Paint the graphical elements
+
+
+
 scui.NewObject(
     #IFOCLASS_BEVELBOX,
     "bvlBackground",
