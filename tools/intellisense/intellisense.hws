@@ -1,12 +1,9 @@
-@APPAUTHOR ""
-@APPCOPYRIGHT ""
-@APPDESCRIPTION ""
-@APPTITLE ""
-@APPVERSION "$VER: "
+@APPAUTHOR "Michael Jurisch"
+@APPCOPYRIGHT "2008 - 2010 by Michael Jurisch"
+@APPTITLE "Hollywood Functions Intellisense"
+@APPVERSION "$VER: 1.0"
 @VERSION 3,1
-@DISPLAY { Title = "Func Intellisense", Height = 1, Width = 1 }
-
-; TODO: Alter the preprocessor comands above
+@DISPLAY { Title = "Hollywood Functions Intellisense", Height = 1, Width = 1 }
 
 HideDisplay()
 
@@ -16,14 +13,12 @@ commands$ = "ENTRY="
 Function getWords(msg)
     Switch msg.action
         Case "OnARexx"
-            OpenFile(1, "golded:add-ons/hollywood/autocase/hollywood")
+            OpenFile(1, "golded:add-ons/hollywood/autocase/hollywood"); TODO: auch die Constanten-datei laden. Am besten Code auslagern in eigene Methode; gibt sie falls zurück, in nächster Datei suchen
 
             While Not Eof(1)
                 command$ = ReadLine(1)
                 ;begin$ = LeftStr(command$, StrLen(msg.args)) ; TODO: strlen() des übergebenen Strings
-                If FindStr(command$, msg.args, False) <> -1
-                    ; speichere Eintrag in Tabelle = fülle Array
-                    ;NPrint(command$)
+                If FindStr(command$, msg.args, False) <> -1 ; wurde Wort gefunden, soll dieser der ENTRY-Stringliste angefügt werden
                     commands$ = AddStr(commands$, " " .. command$)
                 EndIf
             Wend
@@ -33,12 +28,10 @@ Function getWords(msg)
     EndSwitch
 
     terminate$ = True
-    Return(commands$)
+    Return(commands$) ; der aufgebaute ENTRY-String wird an Cubic bzw. intellisense.rexx zurückgegeben
 EndFunction
 
 CreateRexxPort("NX_01_ENTERPRISE")
-
-;RunRexxScript("golded:add-ons/hollywood/rexx/intellisense.rexx")
 
 InstallEventHandler({OnARexx = getWords})
 
