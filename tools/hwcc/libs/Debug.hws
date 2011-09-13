@@ -1,0 +1,281 @@
+@INCLUDE "Helpers.hws"
+;———————————————————————————————————————————————————————————————————————————————
+Global  DBG = {}           ;                                    Main Debug table
+DBG.Console = {}           ;              Table used by the DBG.Console commands
+DBG.Log     = {}           ;                  Table used by the DBG.Log commands
+;———————————————————————————————————————————————————————————————————————————————
+;———————————————————————————————————————————————————————————————————————————————
+; CONTENTS
+;  • DBG.Console.Enable()                 Enable the debug output to the console
+;  • DBG.Console.Out()                       Send a debug message to the console
+;  • DBG.Console.Disable()               Disable the debug output to the console
+;  • DBG.Log.Enable()                      Enable the debug output to a log file
+;  • DBG.Log.Out()                          Send a debug message to the log file
+;  • DBG.Log.Disable()                     Disable the debug out to the log file
+;  • DBG.DumpTable()      Dump to the console or to the log file the given table
+;———————————————————————————————————————————————————————————————————————————————
+;———————————————————————————————————————————————————————————————————————————————
+
+;——— PRIVATE VARIABLES —————————————————————————————————————————————————————————
+DBG.Console.Enabled    = False
+DBG.Log.Enabled        = False
+DBG.Log.FileID         = -1
+DBG.Log.Filename       = ""
+DBG.DumpTableIdentSize = 3
+
+DBG.OutMode_Straight = 1
+DBG.OutMode_Console  = 2
+DBG.OutMode_Log      = 3
+
+DBG.Version          = "2011.02.13"
+
+;———————————————————————————————————————————————————————————————————————————————
+Function DBG.Console.Enable()
+;———————————————————————————————————————————————————————————————————————————————
+; Enable the debug output to the console
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  -- none --
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • result       TRUE if the output has been activated, FALSE if an error has
+;                 accurred (for example the debug has been already activated)
+;-------------------------------------------------------------------------------
+
+   If DBG.Console.Enabled = True Then Return(False)
+   DBG.Console.Enabled = True
+   
+   Return(True)
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+Function DBG.Console.Out(Message)
+;———————————————————————————————————————————————————————————————————————————————
+; If the debug output has been activated with <DBG.Console.Enable> then the
+; <message> will be printed to the console.
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  • Message      The message to print
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • result       TRUE if the <Message> has been successfully printed, otherwise
+;                 FALSE (for example if the debug output has not been activated)
+;———————————————————————————————————————————————————————————————————————————————
+; NOTES
+; <Message> can be a STRING, a NUMBER, NIL or a TABLE, all the other types (for
+; example FUNCTIONs) will be ignored.
+;-------------------------------------------------------------------------------
+
+   If DBG.Console.Enabled
+      If (GetType(Message) = #STRING) Or (GetType(Message) = #NUMBER)
+         DebugPrint(Message)
+         Return(True)
+      ElseIf GetType(Message) = #TABLE
+         DBG.DumpTable(Message, DBG.OutMode_Console)
+         Return(True)
+      ElseIf GetType(Message) = #NIL
+         DebugPrint("NIL")
+      EndIf
+   EndIf
+   
+   Return(False)
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+Function DBG.Console.Disable()
+;———————————————————————————————————————————————————————————————————————————————
+; Disable debug output to the console
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  -- none --
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • result       TRUE if the output has been unctivated, FALSE if an error has
+;                 accurred (for example the debug has been already unctivated)
+;-------------------------------------------------------------------------------
+
+   If DBG.Console.Enabled = False Then Return(False)
+   DBG.Console.Enabled = False
+   
+   Return(True)
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+Function DBG.Log.Enable(LogFile)
+;———————————————————————————————————————————————————————————————————————————————
+; Enable the debug output messages to a log file defined by <LogFile>
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  • LogFile      A log file where all debug messages will be written
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • result       TRUE if the output has been activated, FALSE if an error has
+;                 accurred (for example the debug has been already activated,
+;                 the output file can't be opened or <LogFile> is nil).
+;———————————————————————————————————————————————————————————————————————————————
+; NOTES
+; It the output has been successfully enable you can find the file handler in
+; the variable <DBG.Log.FileID> and the log filename in the variable
+; <DBG.Log.Filename>.
+;-------------------------------------------------------------------------------
+
+   If DBG.Log.Enabled = True Then Return(False)
+   If HL.IsNil(LogFile) Then Return(False)
+   
+   If Exists(LogFile) Then DeleteFile(LogFile)
+   
+   ExitOnError(False)
+   DBG.Log.FileID = OpenFile(Nil, LogFile, #MODE_WRITE)
+   Local error = GetLastError()
+   ExitOnError(True)
+   
+   If error <> 0 Then Return(False)
+
+   DBG.Log.Filename = LogFile
+   DBG.Log.Enabled = True
+   
+   Return(True)
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+Function DBG.Log.Out(Message)
+;———————————————————————————————————————————————————————————————————————————————
+; If the debug output has been activated with <DBG.Log.Enable> then the
+; <message> will be written to the log file
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  • Message      The message to write to the log file
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • result       TRUE if the <Message> has been successfully written, otherwise
+;                 FALSE (for example if the debug output has not been activated)
+;-------------------------------------------------------------------------------
+
+   Local tp = GetType(Message)
+   Switch tp
+      Case #TABLE
+      DBG.DumpTable(Message, DBG.OutMode_Log)
+      Message = "--- end table ---"
+
+      Case #FUNCTION
+      Message = "#FUNCTION"
+      
+      Case #USERDATA
+      Message = "#USERDATA"
+
+      Case #LIGHTUSERDATA
+      Message = "#LIGHTUSERDATA"
+
+   EndSwitch
+      
+   If DBG.Log.Enabled
+      WriteLine(DBG.Log.FileID, GetDate(True) .. " : " .. HL.SafeNil(Message))
+      Return(True)
+   Else
+      Return(False)
+   EndIf
+   
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+Function DBG.Log.Disable()
+;———————————————————————————————————————————————————————————————————————————————
+; Disable debug output to the console
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  -- none --
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • result       TRUE if the output has been unctivated, FALSE if an error has
+;                 accurred (for example the debug has been already unctivated)
+;-------------------------------------------------------------------------------
+
+   If DBG.Log.Enabled = False Then Return(False)
+   DBG.Log.Enabled = False
+   
+   CloseFile(DBG.Log.FileID)
+   
+   Return(True)
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+Function DBG.DumpTable(table, mode, ident)
+;———————————————————————————————————————————————————————————————————————————————
+; Dump the <table> contents according to the <mode> specified, <ident> is a
+; private variable used in recursive dumping and should not be used directly.
+;———————————————————————————————————————————————————————————————————————————————
+; INPUT
+;  • table        Table to dump
+;  • mode         Output mode to use, can be:
+;                  • DBG.OutMode_Straight       Dump directly to the console
+;                  • DBG.OutMode_Console        Dump to the console (if active)
+;                  • DBG.OutMode_Log            Dump to the log file (if active)
+;  • ident        [PRIVATE] Starting identation level
+;———————————————————————————————————————————————————————————————————————————————
+; OUTPUT
+;  • result       TRUE if the table has been successfully dumped, otherwise
+;                 FALSE
+;———————————————————————————————————————————————————————————————————————————————
+; NOTES
+; This func is safe against empty tables or nil.
+; Using <DBG.OutMode_Straight> mode the output will be redirected to the console
+; even if the console output is not enabled, usefull for quick debugging.
+; ------------------------------------------------------------------------------
+
+   Local a, b
+   Local space = ""
+
+   If HL.IsNil(mode) Then mode = DBG.OutMode_Straight
+   
+   Local outfunc = DebugPrint
+   If mode = DBG.OutMode_Console
+      outfunc = DBG.Console.Out
+   ElseIf mode = DBG.OutMode_Log
+      outfunc = DBG.Log.Out
+   EndIf
+
+   If HL.IsNil(ident) Then ident = 0
+   If HL.IsNil(table)
+      outfunc("! [DBG.DumpTable]: NIL Table!")
+      Return(False)
+   EndIf
+
+   ; Build the identation string
+   For Local c = 0 To ident Do space = space .. " "
+
+   ; Process the table recursively...
+   a, b = NextItem(table)
+   While GetType(a) <> #NIL
+      If GetType(b) = #TABLE
+         outfunc(space .. "[" .. a .. "]: Table")
+         DBG.DumpTable(b, mode, ident + DBG.DumpTableIdentSize)
+      ElseIf GetType(b) = #FUNCTION
+         outfunc(space .. "[" .. a .. "]: Function")
+      ElseIf GetType(b) = #USERDATA
+         outfunc(space .. "[" .. a .. "]: UserData")
+      ElseIf GetType(b) = #LIGHTUSERDATA
+         outfunc(space .. "[" .. a .. "]: LightUserData")
+      Else
+         Local tp = ""
+         Switch GetType(b)
+            Case #STRING
+               tp = "(STR) "
+            Case #NUMBER
+               tp = "(NUM) "
+            Default
+               tp = "(???) "
+         EndSwitch
+         outfunc(space .. "[" .. a .. "] = " .. tp .. HL.SafeNil(b))
+      EndIf
+      a, b = NextItem(table, a)
+   Wend
+   
+   Return(True)
+   
+EndFunction
+
+;———————————————————————————————————————————————————————————————————————————————
+; CHANGE LOG
+;———————————————————————————————————————————————————————————————————————————————
+; 2011.02.13 : Corrected some minor bugs
+

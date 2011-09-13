@@ -1,0 +1,152 @@
+; VECTORZ LIBRARY
+; -------------
+Local Vectorz =  { Current = { x = 0, y = 0 },
+                   Colors  = { a = 0, r = 255, g = 0, b = 255,
+                               a2= 0, r2= 255, g2= 0, b2= 0},
+                   GradAngle = 160,
+                   BorderColor = ARGB(0, RGB(255, 0, 255)),
+                   BorderWidth = 2,
+                   Scale   = 2 
+                  }
+
+Function Vectorz.Move(x, y)
+    Vectorz.Current.x = Vectorz.Current.x + x * Vectorz.Scale
+    Vectorz.Current.y = Vectorz.Current.y + y * Vectorz.Scale
+EndFunction
+
+Function Vectorz.Draw(x, y)
+    Local StartX = Vectorz.Current.x 
+    Local StartY = Vectorz.Current.y
+    Local EndX = StartX + x * Vectorz.Scale
+    Local EndY = StartY + y * Vectorz.Scale
+    Local C = ARGB(Vectorz.Colors.a, RGB(Vectorz.Colors.r, Vectorz.Colors.g, Vectorz.Colors.b))
+    Line(StartX, StartY, EndX, EndY, C)
+    Vectorz.Current.x = EndX
+    Vectorz.Current.y = EndY
+EndFunction
+
+Function Vectorz.Color(a, r, g, b)
+    Vectorz.Colors.a = a
+    Vectorz.Colors.r = r
+    Vectorz.Colors.g = g
+    Vectorz.Colors.b = b
+EndFunction
+Function Vectorz.Color2(a, r, g, b)
+    Vectorz.Colors.a2 = a
+    Vectorz.Colors.r2 = r
+    Vectorz.Colors.g2 = g
+    Vectorz.Colors.b2 = b
+EndFunction
+Function Vectorz.Poly(verts)
+    Local count = 0
+    Local a, b
+    Local v2 = {}
+    a, b = NextItem(verts)
+    While GetType(a) <> #NIL
+        count = count + 1
+        v2[a] = verts[a] * Vectorz.Scale
+        a, b = NextItem(verts, a)
+    Wend
+
+    Polygon(Vectorz.Current.x, Vectorz.Current.y, v2, count/2, ARGB(Vectorz.Colors.a, RGB(Vectorz.Colors.r, Vectorz.Colors.g, Vectorz.Colors.b)), 0)
+    
+EndFunction
+
+Function Vectorz.Render(commands, position, scale)
+    SetFormStyle(#ANTIALIAS)
+    Local count = 0
+    Local a, b
+    Local v2 = {}
+    a, b = NextItem(commands)
+    While GetType(a) <> #NIL
+        a, b = NextItem(commands, a)
+        count = count + 1
+    Wend
+
+    If GetType(scale) <> #NIL Then Vectorz.Scale = scale
+    If GetType(position) <> #NIL
+        Vectorz.Current.x = position[0]
+        Vectorz.Current.y = position[1]
+    EndIf
+    
+    Local i
+    For i = 0 To Count - 1
+        Switch commands[i].Cmd
+            Case "Move"
+                Vectorz.Move(commands[i][0][0], commands[i][0][1])
+            Case "Draw"
+                Vectorz.Draw(commands[i][0][0], commands[i][0][1])
+            Case "Poly"
+                Vectorz.Poly(commands[i][0])
+            Case "Col"
+                Vectorz.Color(commands[i][0][0], commands[i][0][1], commands[i][0][2], commands[i][0][3])
+            Case "Col2"
+                Vectorz.Color2(commands[i][0][0], commands[i][0][1], commands[i][0][2], commands[i][0][3])
+            Case "Form"
+                Switch commands[i][0]
+                    Case "Normal"
+                        ;SetFormStyle(#NORMAL)
+                    Case "Antialias"
+                        ;SetFormStyle(#ANTIALIAS)
+                EndSwitch
+            Case "Fill"
+                Switch commands[i][0]
+                    Case "None"
+                        SetFillStyle(#FILLNONE)
+                    Case "Solid"
+                        SetFillStyle(#FILLCOLOR)
+                    Case "Gradient"
+                        SetFillStyle(#FILLGRADIENT, #LINEAR, 
+                                     ARGB( Vectorz.Colors.a, RGB( Vectorz.Colors.r, Vectorz.Colors.g, Vectorz.Colors.b)),
+                                     ARGB( Vectorz.Colors.a2, RGB( Vectorz.Colors.r2, Vectorz.Colors.g2, Vectorz.Colors.b2)),
+                                     Vectorz.GradAngle)
+                EndSwitch
+
+        EndSwitch
+    Next
+    SetFormStyle(#NORMAL)
+    
+EndFunction
+
+   
+/*   
+; ------- TEST -------
+ChangeDisplaySize(610, 550)
+MoveDisplay(#CENTER, #CENTER)
+
+Vectorz.Move(50,50)
+
+;Vectorz.Move(-5, -5)
+;Vectorz.Draw(0, 10)
+;Vectorz.Draw(10, -5)
+;Vectorz.Draw(-10, -5)
+
+;Vectorz.Move(100, 100)
+;Vectorz.Poly({ 10,10,15, -15, -30, 30, 60, -10, 10, 10})
+
+
+; --- VCZ ---
+Local vcz = { { Cmd = "Move", {  -5, -5 } },
+              { Cmd = "Fill", "None" },
+              { Cmd = "Form", "Normal" },
+              { Cmd = "Col" , { 0, 0, 255, 0 } },
+              { Cmd = "Draw", {   0, 10 } },
+              { Cmd = "Draw", {  10, -5 } },
+              { Cmd = "Draw", { -10, -5 } },
+              { Cmd = "Move", {  50, 50 } },
+              { Cmd = "Form", "Antialias" },
+              { Cmd = "Col" ,  { 0, 255, 0, 0 } },
+              { Cmd = "Col2" , { 0, 0, 0, 255 } },
+              { Cmd = "Fill", "Gradient" },
+              { Cmd = "Poly", { 0, 10, 10, -5, -10, -5 } }
+             }
+                    
+Local c
+For c = 1 To 10 Step 3                    
+Vectorz.Render(vcz, { 100, 100 }, c)
+Next
+
+Repeat
+    WaitEvent
+Forever
+*/
