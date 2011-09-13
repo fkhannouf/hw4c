@@ -1,11 +1,9 @@
 @APPAUTHOR "Michael Jurisch"
-@APPCOPYRIGHT "2008 - 2010 by Michael Jurisch"
+@APPCOPYRIGHT "2008 - 2011 by Michael Jurisch"
 @APPTITLE "Hollywood Functions Intellisense"
-@APPVERSION "$VER: 1.0"
-@VERSION 3,1
-@DISPLAY { Title = "Hollywood Functions Intellisense", Height = 1, Width = 1 }
-
-HideDisplay()
+@APPVERSION "$VER: 1.1"
+@VERSION 4,5
+@DISPLAY { Title = "Hollywood Functions Intellisense", Width = 1, Height = 1, NoHide = True, x = #LEFT, y = #TOP, Borderless = True }
 
 terminate$ = False
 commands$ = "ENTRY="
@@ -13,19 +11,21 @@ commands$ = "ENTRY="
 Function getWords(msg)
     Switch msg.action
         Case "OnARexx"
-            OpenFile(1, "golded:add-ons/hollywood/autocase/hollywood"); TODO: auch die Constanten-datei laden. Am besten Code auslagern in eigene Methode; gibt sie falls zurück, in nächster Datei suchen
+            OpenFile(1, "golded:add-ons/hollywood/autocase/hollywood"); TODO: auch die Constanten-datei laden. Am besten Code auslagern in eigene Methode; gibt sie false zurück, in nächster Datei suchen
 
             While Not Eof(1)
                 command$ = ReadLine(1)
                 ;begin$ = LeftStr(command$, StrLen(msg.args)) ; TODO: strlen() des übergebenen Strings
                 If FindStr(command$, msg.args, False) <> -1 ; wurde Wort gefunden, soll dieser der ENTRY-Stringliste angefügt werden
-                    commands$ = AddStr(commands$, " " .. command$)
+                    commands$ = AddStr(commands$, command$ .. " ")
                 EndIf
             Wend
 
             CloseFile(1)
 
     EndSwitch
+
+    commands$ = TrimStr(commands$, " ", True) ; eventuell vorhandenes Leerzeichen am Ende des Strings wieder entfernen
 
     terminate$ = True
     Return(commands$) ; der aufgebaute ENTRY-String wird an Cubic bzw. intellisense.rexx zurückgegeben
