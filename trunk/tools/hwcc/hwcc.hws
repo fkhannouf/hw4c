@@ -1,0 +1,673 @@
+@APPTITLE "Hollywood-Cubic-Compiler"
+@APPVERSION "$VER: 0.8.5 (20.04.2009)"
+@APPAUTHOR "Michael Jurisch"
+@APPCOPYRIGHT   "(C) Copyright 2008 by Michael Jurisch"
+@VERSION 3,1
+@DISPLAY { Width = 350, Height = 380, Title = "Hollywood-Cubic-Compiler - Version: 0.8.5" }
+
+@INCLUDE "Scuilib.hws"
+@INCLUDE "HWxGUI.hws" ; GUI elements depending on HW version
+
+;;; Version History
+; 11.03.2009:
+;   - begonnen mit Unterscheidung für die unterstützenden OS je nach HW-Version (in init())
+;
+; 26.11.08:
+;   - Bugfix: falls als Ausgabeverzeichnis ein "oberes" Laufwerk wie RAM: angegeben wird,
+;             wird nicht compiliert, Fehlermeldung, da Pfad als RAM:/classic angegeben wird
+;             (gemeldet von MArtin "McFly" Cornelius
+;   - alle Referenzen bzgl. hwa entfernt, da hwa ja schon compiliertes Format ist
+;;;
+
+;;; "TODOs"
+
+; "X" und onClick der String boxes in _eine_ Funktion
+; put all the target OS stuff into a table to make it more dynamic!!!!
+; info-Datei erzeugen (siehe HW-GUI) inkl. Eintrag im Tooltype (WINDOW, FULLSCREEN)
+; Starten des Skripts per Button
+; Das Problem mit dem Mac-Verzeichnis ist wohl mit HW4.0 weg -> Unterscheidung nach HW-Version, die auf System zur Verfügung steht
+; "Reset"-Button
+; Multilanguage-Unterstützung
+; MacOS -> "Resource"-Order. Da drin externe Daten!?
+; *.ini file for Win/Mac, AMiga hat Tooltypes. Das miteinander verbinden? Evnetuell Feature Request an Andreas
+;;;
+
+;;; initialise the application
+Function init()
+    ; some constants
+    Global winWidth$ = GetAttribute(#DISPLAY, 0, #ATTRWIDTH)
+    Global winHeight$ = GetAttribute(#DISPLAY, 0, #ATTRHEIGHT)
+
+    Global bOutputDir = True ; Default: create separate dirs for every compiled version
+    Global tmpPath$ = "T:hwcc_output" ; temporary directory for compiling output
+
+    Global m_bHasCompiled = False ; this switch is true, if the user has compiled; used for finding out, whether setOptBGColor() has to be called
+
+    n$ = 0
+    t$, n$ = GetCommandLine()
+
+    if n$ = 0
+        t$ = {}
+        t$[0] = { arg = "", param = "" } ; -source - initialize the table
+        t$[1] = { arg = "", param = "" } ; -target - initialize the table
+        t$[2] = { arg = "", param = "" } ; -appname - initialize the table
+    EndIf
+
+    ver$ = GetVersion() ; find out which OS is running this app
+
+    /* TODO: Add MacOS (Intel)? But that should not be neccesary Until there is a
+     * a Hollywood compiler For MacOS (same For Windows)
+     */
+
+    If ver$.platform = "AmigaOS3"
+        osId$ = 1
+    EndIf
+
+    If ver$.platform = "AmigaOS4"
+        osId$ = 2
+    EndIf
+
+    If ver$.platform = "WarpOS"
+        osId$ = 3
+    EndIf
+
+    If ver$.platform = "MorphOS"
+        osId$ = 4
+    EndIf
+
+    If ver$.platform = "AROS"
+        osId$ = 5
+    EndIf
+
+    If ver$.platform = "Win32"
+        osId$ = 6
+    EndIf
+
+    If ver$.platform = "MacOS"
+        osId$ = 7
+    EndIf
+
+    hwversion$ = LeftStr(ver$.version, 1)
+
+EndFunction
+;;;
+
+;;; deletes the file suffix of the appname (is get by \FILE of GoldED)
+Function deleteAppSuffix()
+    If FindStr(t$[2].param, ".hws", False) <> 0
+        Return(ReplaceStr(t$[2].param, ".hws", "", False))
+    EndIf
+EndFunction
+;;;
+
+;;; save default background color
+Function getDefaultBGColor()
+    Global lblColor$ = {}
+    Global lblTxtColor$ = {}
+    Global strColor$ = {}
+
+    Local lbl = scui.Get("lblTargetOS")
+    lblColor$ = lbl.Bevel.Colors.Fill1
+    lblTxtColor$ = lbl.Text.Color
+
+    Local str = scui.Get("strSourceFile");
+    strColor$ = str.Bevel.Colors.Fill1
+EndFunction
+;;;
+
+;;; set the background color of certain elements
+Function setBGColor(msg)
+    Local strSrcFile_id = scui.GetIFOID("strSourceFile")
+    Local strTgtFile_id = scui.GetIFOID("strTargetFile")
+    Local strAppName_id = scui.GetIFOID("strAppName")
+
+    If msg.id = strSrcFile_id
+        scui.Set("strSourceFile", { Bevel = { Colors = { Fill1 = strColor$ } } } , 1)
+    ElseIf msg.id = strTgtFile_id
+        scui.Set("strTargetFile", { Bevel = { Colors = { Fill1 = strColor$ } } } , 1)
+    ElseIf msg.id = strAppName_id
+        scui.Set("strAppName", { Bevel = { Colors = { Fill1 = strColor$ } } } , 1)
+    EndIf
+
+    setOptBGColor()
+
+    setStatus("default")
+EndFunction
+;;;
+
+;;; sets the background of option buttons after compiling back to original color
+ Function setOptBGColor()
+    If m_bHasCompiled = True
+        Local opts = scui.Get("optTargetOS")
+
+        For Local i = 1 To opts.ChildCount
+            scui.Set(opts.Childs[i], { PBevel = { Colors = { Fill1 = m_tOptColor } } }, 1 )
+        Next
+
+        m_bHasCompiled = False
+    EndIf
+EndFunction
+;;;
+
+;;; empty the string boxes when pressing X
+Function clearField(msg)
+    Local butClrSrc_id = scui.GetIFOID("butClearSource")
+    Local butClrTar_id = scui.GetIFOID("butClearTarget")
+    Local butClrApp_id = scui.GetIFOID("butClearAppName")
+
+    If msg.id = butClrSrc_id
+           scui.Set("strSourceFile", { Value = ""}, 1 )
+    ElseIf msg.id = butClrTar_id
+           scui.Set("strTargetFile", { Value = ""}, 1 )
+    ElseIf msg.id = butClrApp_id
+           scui.Set("strAppName", { Value = ""}, 1 )
+           appname$ = ""
+    EndIf
+EndFunction
+;;;
+
+;;; sets the text and color of the status bar at the bottom of the window
+Function setStatus(status$)
+    If status$ = "default"
+        scui.Set("lblStatus", { Bevel = { Colors = { Fill1 = lblColor$ } } }, 1)
+        scui.Set("lblStatus", { Text = { Color = lblTxtColor$ } }, 1)
+        scui.Set("lblStatus", { Text = { Content = { Values = { "" }, Lines = 1 } } }, 1)
+
+    ElseIf status$ = "compiling"
+        scui.Set("lblStatus", { Bevel = { Colors = { Fill1 = { r = 0, g = 70, b = 120 } } } }, 1)
+        scui.Set("lblStatus", { Text = { Color = { r = 225, g = 225, b = 225 } } }, 1)
+        scui.Set("lblStatus", { Text = { Content = { Values = { "Compiling ..." }, Lines = 1 } } }, 1)
+
+    ElseIf status$ = "compile_succ"
+        scui.Set("lblStatus", { Bevel = { Colors = { Fill1 = { r = 0, g = 70, b = 120 } } } }, 1)
+        scui.Set("lblStatus", { Text = { Color = { r = 225, g = 225, b = 225 } } }, 1)
+        scui.Set("lblStatus", { Text = { Content = { Values = { "Compiling successfully finished!" }, Lines = 1 } } }, 1)
+
+    ElseIf status$ = "compile_succ_error"
+        scui.Set("lblStatus", { Bevel = { Colors = { Fill1 = { r = 0, g = 70, b = 120 } } } }, 1)
+        scui.Set("lblStatus", { Text = { Color = { r = 225, g = 225, b = 225 } } }, 1)
+        scui.Set("lblStatus", { Text = { Content = { Values = { "Compiling successfully finished ([b]with some errors[/b])!" }, Lines = 1 } } }, 1)
+
+    ElseIf status$ = "compile_error"
+        scui.Set("lblStatus", { Bevel = { Colors = { Fill1 = { r = 0, g = 70, b = 120 } } } }, 1)
+        scui.Set("lblStatus", { Text = { Color = { r = 225, g = 225, b = 225 } } }, 1)
+        scui.Set("lblStatus", { Text = { Content = { Values = { "Compiling was not successful!" }, Lines = 1 } } }, 1)
+
+    ElseIf status$ = "error"
+        scui.Set("lblStatus", { Bevel = { Colors = { Fill1 = { r = 250, g = 0, b = 0 } } } }, 1)
+        scui.Set("lblStatus", { Text = { Color = { r = 225, g = 225, b = 225 } } }, 1)
+        scui.Set("lblStatus", { Text = { Content = { Values = { "Errors occured!" }, Lines = 1 } } }, 1)
+
+        scui.Set("strSourceFile", { Clear1st = 1 })
+        scui.Set("strTargetFile", { Clear1st = 1 })
+        scui.Set("strAppName", { Clear1st = 1 })
+    EndIf
+EndFunction
+;;;
+
+;;; opens the file open dialog for source file
+Function openSourceFileDialog()
+    Local sf$ = scui.Get("strSourceFile")
+    Local file$
+    If n$ = 0
+        file$ = FileRequest("Choose the source file", "hws", #REQ_NORMAL)
+    Else
+        file$ = FileRequest("Choose the source file", "hws", #REQ_NORMAL, PathPart(sf$.value), FilePart(sf$.value))
+    EndIf
+
+    If file$ <> "" ; if the chosen file constains a string ...
+        scui.Set("strSourceFile", { Value = file$ }, 1) ; ... set it in the Stringbox
+    EndIf
+
+    ;setOptBGColor()
+EndFunction
+;;;
+
+;;; opens the file open dialog for target file
+Function openTargetFileDialog()
+    Local tf$ = scui.Get("strTargetFile")
+    Local path$
+    If n$ = 0
+        path$ = PathRequest("Enter output path", #REQ_NORMAL)
+    Else
+        path$ = PathRequest("Enter output path", #REQ_NORMAL, tf$.value)
+    EndIf
+
+    Local temp$ = RightStr(path$, 1) ; get the last char of the path string
+    If FindStr(temp$, ":") = -1 ; if the last char is _not_ a : (like in RAM:) ...
+        If FindStr(temp$, "/") = -1 ; if the last char is _not_ a slash ...
+            path$ = AddStr(path$, "/") ; ... we need to add it
+        EndIf
+    EndIf
+
+    if path$ <> ""
+        scui.Set("strTargetFile", { Value = path$ }, 1)
+    EndIf
+EndFunction
+;;;
+
+;;; alters the name of the app after changing it in its Stringbox
+Function alterAppName()
+    Local app$ = scui.Get("strAppName")
+    appname$ = app$.value
+EndFunction
+;;;
+
+;;; sets the compiling output mode
+Function setOutputMode()
+    Local opts$ = scui.Get("optOutputMode")
+    If opts$.Value[0] = 1     ; = "create directories"
+        bOutputDir = True
+    ElseIf opts$.Value[1] = 1 ; = "attach OS string"
+        bOutputDir = False
+    EndIf
+EndFunction
+;;;
+
+;;; compile function
+Function executeCompile(bOutputDir$, sPlatform$, sSource$, sTarget$, iOptEntry)
+    Local tPath$ = tmpPath$
+    Local path$
+    Local app$
+    Local opts$ = scui.Get("optTargetOS")
+
+    Local bCompileSuccess = False
+    Local bCompileError = False
+    
+    MakeDirectory(tPath$)
+
+    If bOutputDir = True
+        MakeDirectory(tPath$.."/"..sPlatform$) ; create dir for temp output
+
+        MakeDirectory(sTarget$..sPlatform$) ; create dir for final output
+
+        app$ = appname$
+        path$ = sTarget$..sPlatform$
+
+        tPath$ = AddStr(tPath$, "/"..sPlatform$.."/")
+    Else
+        app$ = appname$.."_"..sPlatform$
+        path$ = sTarget$
+        tPath$ = AddStr(tPath$, "/")
+    EndIf
+
+    If sPlatform$ = "win32"
+        app$ = app$..".exe"
+    EndIf
+
+    If sPlatform$ = "applet"
+        app$ = app$..".hwa"
+    EndIf
+
+    Execute("Hollywood "..sSource$.." -compile "..tPath$..app$.." -exetype "..sPlatform$.." -quiet")
+
+    ; this has to be after the Execute comand!!!!!
+    If sPlatform$ = "macos" or sPlatform$ = "macos86"
+        app$ = ""
+    EndIf
+
+    If Exists(tPath$..app$) = 1 ; wenn Datei existiert war Kompilierung ein Erfolg
+        ;TODO: nochmal CopyFile()-Doku anschauen wegen Overwrite-Nachfrage!!!
+        ;TODO: Andreas fragen wegen Rückgabewerte für CopyFile und Hollywood selbst -> siehe Mail vom 23.11.2008
+        CopyFile(tPath$..app$, path$) ; kopiert Datei aus temporären Ordner in eigentlichen Ordner
+        scui.Set(opts$.Childs[iOptEntry], { PBevel = { Colors = { Fill1 = { r = 0, g = 250, b = 0 } } } }, 1 )
+        bCompileSuccess = True
+
+        DeleteFile(tmpPath$) ; temp-Ordner/Dateien wieder löschen
+    Else ; Fehler beim Kompilieren
+        scui.Set(opts$.Childs[iOptEntry], { PBevel = { Colors = { Fill1 = { r = 250, g = 0, b = 0 } } } }, 1 )
+        bCompileError = True
+    EndIf
+
+    Return({bCompileSuccess, bCompileError})
+EndFunction
+;;;
+
+;;; compiles the source file to the target file
+Function compile()
+    Local sf = scui.Get("strSourceFile")
+    Local tf = scui.Get("strTargetFile")
+    Local os = scui.Get("optTargetOS")
+    Local app$ = appname$
+    
+    Local error$ = False
+    Local bCompileSuccess = False
+    Local bCompileError = False
+    
+    Local numOS = os.ChildCount - 1 ; number of available platforms
+
+    setOptBGColor() ; set bg color of option buttons back to default (in case they are green or red)
+
+    If sf.value = ""
+        scui.Set("strSourceFile", { Bevel = { Colors = { Fill1 = { r = 250, g = 0, b = 0 } } } }, 1 )
+        scui.Set("strSourceFile", { Value = "Please enter or choose the source file!" }, 1 )
+
+        error$ = True
+    EndIf
+
+    If tf.value = ""
+        scui.Set("strTargetFile", { Bevel = { Colors = { Fill1 = { r = 250, g = 0, b = 0 } } } }, 1 )
+        scui.Set("strTargetFile", { Value = "Please enter or choose the output path!" }, 1 )
+        
+        error$ = True
+    EndIf
+
+    If app$ = ""
+        scui.Set("strAppName", { Bevel = { Colors = { Fill1 = { r = 250, g = 0, b = 0 } } } }, 1 )
+        scui.Set("strAppName", { Value = "Please enter the filename!" }, 1 )
+
+        error$ = True
+    EndIf
+
+    If error$ = True
+        setStatus("error")
+        Return
+    EndIf
+
+    ; find out, whether _no_ target platform is selected
+    Local i, c = 0
+    For i = 0 To numOS
+        If os.Value[i] = 1
+            c = c + 1
+        EndIf
+    Next
+
+    ; if no target platform is selected, mark the label red
+    if c = 0
+        scui.Set("lblTargetOS", { Bevel = { Colors = { Fill1 = { r = 250, g = 0, b = 0 } } } }, 1)
+    Else
+        ; TODO: set fill color to default value
+        scui.Set("lblTargetOS", { Bevel = { Colors = { Fill1 = lblColor$ } } }, 1 )
+        setStatus("compiling")
+    EndIf
+
+    ; for all available platforms
+    For Local i = 0 To numOS
+        If os.Value[i] = 1 ; if the option is selected
+            erg = executeCompile(bOutputDir, m_tCompilePlatform[i], sf.value, tf.value, i+1)
+            If erg[0] = 1
+                bCompileSuccess = True
+            EndIf
+
+            If erg[1] = 1
+                bCompileError = True
+            EndIf
+        EndIf
+    Next
+
+    If bCompileSuccess = True And bCompileError = False
+        setStatus("compile_succ")
+    ElseIf bCompileSuccess = False And bCompileError = True
+        setStatus("compile_error")
+    ElseIf bCompileSuccess = True And bCompileError = True
+        setStatus("compile_succ_error")
+    EndIf
+
+    m_bHasCompiled = True
+EndFunction
+;;;
+
+;;; TODO: opens option menu
+Function options()
+    ; TODO
+    ; temporären Ordner angeben (Default: T:hwcc_output)
+    ; Strings für Orndernamen bzw. Dateianhängsel
+    ; Option, ob existierende Dateien (durch Kopieren) still überschrieben werden sollen oder ob nachgefragt werden soll
+    ; Sprache?
+EndFunction
+;;;
+
+;;; select/deselect all options buttons
+Function deSelectTargetOSOpt()
+    Local optswitch = scui.Get("optDeSelTargetOS")
+    Local opts = scui.Get("optTargetOS")
+    Local i
+
+    if optswitch.Value[0] = 1 ; if the "select all" button is pressed
+        for i = 1 to opts.ChildCount
+            scui.Set(opts.Childs[i], { Value = 1 }, 1 ) ; select (Value = 1) all options
+        Next
+    ElseIf optswitch.Value[1] = 1 ; if the "deselect all" button is pressed
+        for i = 1 to opts.ChildCount
+            scui.Set(opts.Childs[i], { Value = 0 }, 1 ) ; deselect (Value = 0) all options
+        Next
+    EndIf
+EndFunction
+;;;
+
+;;; closes the programm
+Function exit()
+    End()
+EndFunction
+;;;
+
+;######### Function calls to initialize the program
+init()
+appname$ = deleteAppSuffix()
+
+;######### Paint the graphical elements
+scui.NewObject(
+    #IFOCLASS_BEVELBOX,
+    "bvlBackground",
+    { x = 0, y = 0 },
+    { x = winWidth$, y = winHeight$ }
+)
+
+; Button: clear string box content
+scui.NewObject(
+    #IFOCLASS_BUTTON,
+    "butClearSource",
+    { x = 5, y = 20 },
+    { x = 10, y = 20 },
+    nil,
+    { Values = { "X" },
+      Lines = 1 },
+    { OnPushed = clearField }
+)
+
+; String box: open source file
+scui.NewObject(
+    #IFOCLASS_STRINGBOX,
+      "strSourceFile",
+    { x = 20, y = 20 },
+    { x = 210, y = 20 },
+    nil,
+    { Values = { t$[0].param },
+      Lines = 1,
+      InputType = #GETKEY_ALL },
+    { OnClick = setBGColor }
+)
+
+; Label: source file
+scui.NewObject(
+    #IFOCLASS_LABEL,
+    "lblSourceFile",
+    { x = 240, y = 20 },
+    { x = 75, y = 20 },
+    nil,
+    { Values = { "Source file" },
+      Lines = 1 }
+)
+
+; Button: open source file
+scui.NewObject(
+    #IFOCLASS_BUTTON,
+    "butSourceFile",
+    { x = 320, y = 20 },
+    { x = 20, y = 20 },
+    nil,
+    { Values = { "..." },
+      Lines = 1 },
+    { OnPushed = openSourceFileDialog }
+)
+
+; Button: clear string box content
+scui.NewObject(
+    #IFOCLASS_BUTTON,
+    "butClearTarget",
+    { x = 5, y = 50 },
+    { x = 10, y = 20 },
+    nil,
+    { Values = { "X" },
+      Lines = 1 },
+    { OnPushed = clearField }
+)
+
+; String box: target file
+scui.NewObject(
+    #IFOCLASS_STRINGBOX,
+    "strTargetFile",
+    { x = 20, y = 50 },
+    { x = 210, y = 20 },
+    nil,
+    { Values = { t$[1].param },
+      Lines = 1,
+      InputType = #GETKEY_ALL},
+    { OnClick = setBGColor }
+)
+
+; Label: target file
+scui.NewObject(
+    #IFOCLASS_LABEL,
+    "lblTargetFile",
+    { x = 240, y = 50 },
+    { x = 75, y = 20 },
+    nil,
+    { Values = { "Output path" },
+      Lines = 1 }
+)
+
+; Button: open target file
+scui.NewObject(
+    #IFOCLASS_BUTTON,
+    "butTargetFile",
+    { x = 320, y = 50 },
+    { x = 20, y = 20 },
+    nil,
+    { Values = { "..." },
+      Lines = 1 },
+    { OnPushed = openTargetFileDialog }
+)
+
+; Button: clear string box content
+scui.NewObject(
+    #IFOCLASS_BUTTON,
+    "butClearAppName",
+    { x = 5, y = 80 },
+    { x = 10, y = 20 },
+    nil,
+    { Values = { "X" },
+      Lines = 1 },
+    { OnPushed = clearField }
+)
+
+; String box: application name
+scui.NewObject(
+    #IFOCLASS_STRINGBOX,
+    "strAppName",
+    { x = 20, y = 80 },
+    { x = 210, y = 20 },
+    nil,
+    { Values = { appname$ },
+      Lines = 1,
+      InputType = #GETKEY_ALL},
+    { OnExit = alterAppName,
+      OnClick = setBGColor }
+)
+
+; Label: application name
+scui.NewObject(
+    #IFOCLASS_LABEL,
+    "lblAppName",
+    { x = 240, y = 80 },
+    { x = 100, y = 20 },
+    nil,
+    { Values = { "Filename" },
+      Lines = 1 }
+)
+
+; Option: output mode
+scui.NewObject(
+    #IFOCLASS_OPTIONS,                  ; Options class
+    "optOutputMode",                         ; IFO name
+    { x =  7, y = 110 },               ; Position
+    { x = 221, y = 25 },               ; Width & Height
+    nil,                                ; Visuals
+    { Rows = 1,                         ; How many rows has the option's grid
+      Columns = 2,                      ; How many columns has the option's grid
+      Mode = #OPTMODE_ONLYONE,          ; Selection mode, can be:
+      ; The next tag is used to define all available options
+      Options = { "create directories", "attach OS string" },
+      DefaultOptions = { 1 },           ; Options activated by default
+      SwitchWidth = 60,                 ; Option switch width in pixels
+      SwitchPosition = #OPT_LEFTSWITCH, ; Switch position relative to its label:
+      SwitchMode = #OPTSWITCH_FULLWIDTH }, ; Switch layout:
+    { OnChanged = setOutputMode }
+)
+
+; Label: output mode
+scui.NewObject(
+    #IFOCLASS_LABEL,
+    "lblOutputMode",
+    { x = 240, y = 112 },
+    { x = 100, y = 20 },
+    nil,
+    { Values = { "Output mode" },
+      Lines = 1 }
+)
+
+drawHWxGUI(hwversion$)
+
+; Button: compile
+scui.NewObject(
+    #IFOCLASS_BUTTON,
+    "butCompile",
+    { x = 9, y = 330 },
+    { x = 100, y = 20 },
+    nil,
+    { Values = { "Compile" },
+      Lines = 1 },
+    { OnPushed = compile }
+)
+
+; Button: options
+/*scui.NewObject(
+    #IFOCLASS_BUTTON,
+    "butOptions",
+    { x = 125, y = 330 },
+    { x = 100, y = 20 },
+    nil,
+    { Values = { "Options" },
+      Lines = 1 },
+    { OnPushed = options }
+)*/
+
+; Button: exit
+scui.NewObject(
+    #IFOCLASS_BUTTON,
+    "butExit",
+    { x = 240, y = 330 },
+    { x = 100, y = 20 },
+    nil,
+    { Values = { "Exit" },
+      Lines = 1 },
+    { OnPushed = exit }
+)
+
+; Label: status
+scui.NewObject(
+    #IFOCLASS_LABEL,
+    "lblStatus",
+    { x = 0, y = winHeight$ - 20 },
+    { x = winWidth$, y = 20 },
+    nil,
+    { Values = { "" },
+      Lines = 1 }
+)
+
+
+getDefaultBGColor() ; get the background color of the gadgets
+
+Repeat
+    WaitEvent()
+Forever
