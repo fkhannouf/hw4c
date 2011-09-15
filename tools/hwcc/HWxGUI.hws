@@ -1,12 +1,20 @@
 ;;; draws the GUI depending on HW version
-Function drawHWxGUI(ver$)
+Function drawHWxGUI(version$)
     ; contains all plattforms that are supported by the specific HW version
     m_tSupportedPlatforms = {}
 
-    If ver$ = "3"
+    Local hwVersion, count = SplitStr(version$, ".") ; split version string (e.g. 4.8)
+    Local mainVersion = ToNumber(hwVersion[0]) ; main revision, e.g. 4
+    Local minorVersion = ToNumber(hwVersion[1]) ; minor revision, e.g. 8
+
+    If mainVersion = 3
         drawHW3GUI()
-    ElseIf ver$ = "4"
-        drawHW4GUI()
+    ElseIf mainVersion = 4
+        If minorVersion < 8
+            drawHW4GUI()
+        Else
+            drawHW48GUI()
+        EndIf
     EndIf
 
     ; would be better to have it in hwcc.hws::getDefaultBGColor()
@@ -16,7 +24,95 @@ Function drawHWxGUI(ver$)
 EndFunction
 ;;;
 
-;;; draws the GUI for HW4 support
+;;; draws the GUI for HW4.8 support
+Function drawHW48GUI()
+    ;DebugPrint("HW4")
+    m_tSupportedPlatforms = {
+        "AmigaOS 3",
+        "AmigaOS 4",
+        "WarpOS",
+        "MorphOS",
+        "AROS",
+        "Windows",
+        "MacOS",
+        "MacOS (Intel)",
+        "Linux",
+        "Applet"
+    }
+
+    m_tCompilePlatform = {
+        "classic",
+        "amigaos4",
+        "warpos",
+        "morphos",
+        "aros",
+        "win32",
+        "macos",
+        "macos86",
+        "linux",
+        "applet"
+    }
+
+; group for label and options "target platform(s)"
+scui.NewObject(
+    #IFOCLASS_BEVELBOX,
+    "bvlTargetOS",
+    { x = 5, y = 151 },
+    { x = 225, y = 170 }
+)
+
+; label for choosing target platform(s)
+scui.NewObject(
+    #IFOCLASS_LABEL,
+    "lblTargetOS",
+    { x = 9, y = 155 },
+    { x = 216, y = 20 },
+    nil,
+    { Values = { "Choose your target platform(s):" },
+    Lines = 1 }
+)
+
+; options for choosing target platform(s)
+scui.NewObject(
+    #IFOCLASS_OPTIONS,
+    "optTargetOS",
+    { x = 9, y = 180 },
+    { x = 214, y = 100 },
+    nil,
+    { Rows = 5,
+      Columns = 2,
+      Mode = #OPTMODE_FREE,
+      Options = m_tSupportedPlatforms,
+      DefaultOptions = { osId$ },
+      SwitchWidth = 20,
+      SwitchPosition = #OPT_LEFTSWITCH,
+      SwitchMode = #OPTSWITCH_FULLWIDTH
+    }
+)
+
+; options for selecting/deselecting all target platform options
+scui.NewObject(
+    #IFOCLASS_OPTIONS,
+    "optDeSelTargetOS",
+    { x = 9, y = 290 },
+    { x = 214, y = 25 },
+    nil,
+    { Rows = 1,
+      Columns = 2,
+      Mode = #OPTMODE_ONLYONE,
+      Options = { "Select all",
+                  "Deselect all" },
+      DefaultOptions = { }, ; nothing should be preselected
+      SwitchWidth = 20,
+      SwitchPosition = #OPT_LEFTSWITCH,
+      SwitchMode = #OPTSWITCH_FULLWIDTH },
+    { OnChanged = deSelectTargetOSOpt }
+)
+EndFunction
+;;;
+
+
+;;; draws the GUI for HW4 support til version 4.7
 Function drawHW4GUI()
     ;DebugPrint("HW4")
     m_tSupportedPlatforms = {
